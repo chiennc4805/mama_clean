@@ -10,7 +10,6 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
@@ -40,7 +39,7 @@ public class Role {
     @Column(columnDefinition = "MEDIUMTEXT")
     private String description;
 
-    private boolean active;
+    private boolean active = true;
 
     @OneToMany(mappedBy = "role")
     @JsonIgnore
@@ -52,9 +51,9 @@ public class Role {
     // "role_id"), inverseJoinColumns = @JoinColumn(name = "permission_id"))
     // private List<Permission> permissions;
 
-    @PrePersist
-    public void handleBeforeCreate() {
-        this.active = true;
-    }
+    // @PrePersist
+    // public void handleBeforeCreate() {
+    // this.active = true;
+    // }
 
 }

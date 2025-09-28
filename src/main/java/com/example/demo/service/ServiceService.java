@@ -1,5 +1,6 @@
 package com.example.demo.service;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -20,7 +21,20 @@ public class ServiceService {
         this.serviceRepository = serviceRepository;
     }
 
-    public ResultPaginationDTO fetchAll(Specification<Service> spec, Pageable pageable) {
+    public ResultPaginationDTO fetchAllService() {
+        List<Service> services = this.serviceRepository.findAll();
+        ResultPaginationDTO res = new ResultPaginationDTO();
+        Meta mt = new ResultPaginationDTO.Meta();
+
+        mt.setTotal(services.size());
+
+        res.setMeta(mt);
+        res.setResult(services);
+
+        return res;
+    }
+
+    public ResultPaginationDTO fetchAllWithPagination(Specification<Service> spec, Pageable pageable) {
         Page<Service> pageService = this.serviceRepository.findAll(spec, pageable);
         ResultPaginationDTO res = new ResultPaginationDTO();
         Meta mt = new ResultPaginationDTO.Meta();

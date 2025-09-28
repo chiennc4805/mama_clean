@@ -26,7 +26,7 @@ public class UserService {
 
     public User handleCreateUser(User user) {
         if (user.getRole() != null) {
-            Role role = this.roleService.handleFetchRoleById(user.getRole().getId());
+            Role role = this.roleService.handleFetchRoleByName(user.getRole().getName());
             user.setRole(role);
         }
         return this.userRepository.save(user);
