@@ -1,5 +1,7 @@
 package com.example.demo.controller;
 
+import java.time.LocalDateTime;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -15,11 +17,15 @@ import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.demo.domain.PendingUser;
 import com.example.demo.domain.User;
 import com.example.demo.domain.dto.request.ReqLoginDTO;
+import com.example.demo.domain.dto.request.ReqOtpVerification;
 import com.example.demo.domain.dto.response.ResLoginDTO;
+import com.example.demo.service.PendingUserService;
 import com.example.demo.service.UserService;
 import com.example.demo.util.SecurityUtil;
 import com.example.demo.util.error.IdInvalidException;
@@ -36,13 +42,15 @@ public class AuthController {
     private final SecurityUtil securityUtil;
     private final UserService userService;
     private final PasswordEncoder passwordEncoder;
+    private final PendingUserService pendingUserService;
 
     public AuthController(AuthenticationManagerBuilder authenticationManagerBuilder, SecurityUtil securityUtil,
-            UserService userService, PasswordEncoder passwordEncoder) {
+            UserService userService, PasswordEncoder passwordEncoder, PendingUserService pendingUserService) {
         this.authenticationManagerBuilder = authenticationManagerBuilder;
         this.securityUtil = securityUtil;
         this.userService = userService;
         this.passwordEncoder = passwordEncoder;
+        this.pendingUserService = pendingUserService;
     }
 
     @PostMapping("/auth/login")
@@ -188,15 +196,106 @@ public class AuthController {
     }
 
     @PostMapping("/auth/register")
-    public ResponseEntity<User> registerUser(@RequestBody User reqUser) throws IdInvalidException {
-        if (this.userService.isExistByUsername(reqUser.getUsername())) {
-            throw new IdInvalidException("Tài khoản " + reqUser.getUsername() + " đã tồn tại");
+    public ResponseEntity<PendingUser> registerUser(@RequestBody PendingUser reqPendingUser) throws IdInvalidException {
+        if (this.userService.isExistByUsername(reqPendingUser.getEmail())) {
+            throw new IdInvalidException("Email " + reqPendingUser.getEmail() + " đã tồn tại");
+        }
+        // if exist, override existed record
+        PendingUser pendingUserDB = this.pendingUserService.fetchByEmail(reqPendingUser.getEmail());
+        if (pendingUserDB != null) {
+            reqPendingUser.setId(pendingUserDB.getId());
+            reqPendingUser.setOtpCode(pendingUserDB.getOtpCode());
+            reqPendingUser.setOtpRequestedTime(pendingUserDB.getOtpRequestedTime());
         }
 
-        String hashPassword = this.passwordEncoder.encode(reqUser.getPassword());
-        reqUser.setPassword(hashPassword);
-        User newUser = this.userService.handleCreateUser(reqUser);
-        return ResponseEntity.status(HttpStatus.CREATED).body(newUser);
+        String hashPassword = this.passwordEncoder.encode(reqPendingUser.getPassword());
+        reqPendingUser.setPassword(hashPassword);
+
+        if (reqPendingUser.getOtpRequestedTime() == null || (reqPendingUser.getOtpRequestedTime() != null
+                && reqPendingUser.getOtpRequestedTime().plusMinutes(5).isBefore(LocalDateTime.now()))) {
+            reqPendingUser = this.pendingUserService.generateAndSendOtp(reqPendingUser, "Registration");
+        }
+        PendingUser newPendingUser = this.pendingUserService.create(reqPendingUser);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(newPendingUser);
+    }
+
+    @PostMapping("/auth/verify-otp")
+    public ResponseEntity<User> verifyOtp(@RequestBody ReqOtpVerification reqOtpVerification)
+            throws IdInvalidException {
+        PendingUser pendingUser = this.pendingUserService.fetchByEmail(reqOtpVerification.getEmail());
+        if (pendingUser == null) {
+            throw new IdInvalidException("Email không tồn tại");
+        }
+
+        User user = new User();
+        if (this.pendingUserService.validateOtp(pendingUser, reqOtpVerification.getOtp())) {
+            if (reqOtpVerification.getType().equalsIgnoreCase("Registration")) {
+                // create new user
+                user.setUsername(pendingUser.getEmail());
+                user.setPassword(pendingUser.getPassword());
+                user.setName(pendingUser.getName());
+                user.setPhone(pendingUser.getPhone());
+                user.setEmail(pendingUser.getEmail());
+                user.setGender(pendingUser.isGender());
+                user.setRole(pendingUser.getRole());
+
+                user = this.userService.handleCreateUser(user);
+            } else if (reqOtpVerification.getType().equalsIgnoreCase("Reset Password")) {
+                // generate new random password and send mail to user
+                user = this.userService.fetchUserByEmail(reqOtpVerification.getEmail());
+
+                String newPassword = this.pendingUserService.generateAndSendNewPassword(reqOtpVerification.getEmail());
+                String hashPassword = this.passwordEncoder.encode(newPassword);
+                user.setPassword(hashPassword);
+
+                user = this.userService.handleUpdateUser(user);
+            }
+            // delete pending user who authenticate successfully
+            this.pendingUserService.delete(pendingUser.getId());
+
+            return ResponseEntity.ok(user);
+        } else {
+            throw new IdInvalidException("OTP không hợp lệ hoặc hết hạn. Xin vui lòng thử lại");
+        }
+    }
+
+    @GetMapping("/auth/resend-otp")
+    public ResponseEntity<PendingUser> resendOtp(@RequestParam String email, @RequestParam String type)
+            throws IdInvalidException {
+        PendingUser pendingUser = this.pendingUserService.fetchByEmail(email);
+        if (pendingUser == null) {
+            throw new IdInvalidException("Email không hợp lệ");
+        }
+        if (pendingUser.getOtpRequestedTime().plusSeconds(30).isBefore(LocalDateTime.now())) {
+            pendingUser = this.pendingUserService.generateAndSendOtp(pendingUser, type);
+        }
+        PendingUser newPendingUser = this.pendingUserService.create(pendingUser);
+        return ResponseEntity.status(HttpStatus.CREATED).body(newPendingUser);
+    }
+
+    @GetMapping("/auth/forget-password")
+    public ResponseEntity<PendingUser> forgetPassword(@RequestParam String email) throws IdInvalidException {
+        if (!this.userService.isExistByUsername(email)) {
+            throw new IdInvalidException("Email " + email + " không tồn tại");
+        }
+        PendingUser pendingUser = new PendingUser();
+        pendingUser.setEmail(email);
+
+        // if exist, override existed record
+        PendingUser pendingUserDB = this.pendingUserService.fetchByEmail(email);
+        if (pendingUserDB != null) {
+            pendingUser.setId(pendingUserDB.getId());
+            pendingUser.setOtpCode(pendingUserDB.getOtpCode());
+            pendingUser.setOtpRequestedTime(pendingUserDB.getOtpRequestedTime());
+        }
+        if (pendingUser.getOtpRequestedTime() == null || (pendingUser.getOtpRequestedTime() != null
+                && pendingUser.getOtpRequestedTime().plusMinutes(5).isBefore(LocalDateTime.now()))) {
+            pendingUser = this.pendingUserService.generateAndSendOtp(pendingUser, "Reset Password");
+        }
+        PendingUser newPendingUser = this.pendingUserService.create(pendingUser);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(newPendingUser);
     }
 
 }

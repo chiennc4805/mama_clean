@@ -68,9 +68,6 @@ public class User {
     @OneToMany(mappedBy = "user")
     private List<UserAddress> userAddresses;
 
-    private String otpCode;
-    private LocalDateTime otpRequestedTime;
-
 }
 
 // @OneToOne(mappedBy = "user", orphanRemoval = true, cascade =

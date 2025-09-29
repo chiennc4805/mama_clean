@@ -37,6 +37,11 @@ public class UserService {
         return userOptional.isPresent() ? userOptional.get() : null;
     }
 
+    public User fetchUserByEmail(String email) {
+        Optional<User> userOptional = this.userRepository.findByEmail(email);
+        return userOptional.isPresent() ? userOptional.get() : null;
+    }
+
     public User handleUpdateUser(User reqUser) {
         User userDB = this.fetchUserById(reqUser.getId());
         // check role

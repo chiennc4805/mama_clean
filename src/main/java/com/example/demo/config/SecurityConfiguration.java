@@ -65,7 +65,8 @@ public class SecurityConfiguration {
     public SecurityFilterChain filterChain(HttpSecurity http,
             CustomAuthenticationEntryPoint customAuthenticationEntryPoint) throws Exception {
         String[] whiteList = {
-                "/", "/auth/login", "/auth/refresh", "/auth/register"
+                "/", "/auth/login", "/auth/refresh", "/auth/register", "/auth/verify-otp", "/auth/resend-otp",
+                "/auth/forget-password"
         };
         http
                 .csrf(c -> c.disable())

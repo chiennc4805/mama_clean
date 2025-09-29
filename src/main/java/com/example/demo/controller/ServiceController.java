@@ -46,6 +46,12 @@ public class ServiceController {
         if (page == null && size == null) {
             return ResponseEntity.ok(this.serviceService.fetchAllService());
         } else {
+            if (page == null) {
+                page = 1;
+            }
+            if (size == null) {
+                size = 10;
+            }
             Pageable pageable = PageRequest.of(page - 1, size);
             return ResponseEntity.ok(this.serviceService.fetchAllWithPagination(spec, pageable));
         }
