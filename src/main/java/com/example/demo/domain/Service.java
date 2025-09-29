@@ -31,5 +31,5 @@ public class Service {
 
     @OneToMany(mappedBy = "service")
     @JsonIgnore
-    private List<ServicePrice> servicePrices;
+    private List<Booking> bookings;
 }

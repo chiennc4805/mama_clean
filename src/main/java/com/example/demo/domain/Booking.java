@@ -32,11 +32,12 @@ public class Booking {
     @UuidGenerator
     private String id;
 
-    private String note;
     private String address;
     private LocalDate date;
     private LocalTime starTime;
+    private double area;
     private double totalPrice;
+    private String note;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -45,10 +46,6 @@ public class Booking {
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
-
-    @ManyToOne
-    @JoinColumn(name = "service_price_id")
-    private ServicePrice servicePrice;
 
     @ManyToOne
     @JoinColumn(name = "cleaner_id")
@@ -69,5 +66,9 @@ public class Booking {
     @OneToOne(mappedBy = "booking")
     @JsonIgnore
     private Payment payment;
+
+    @ManyToOne
+    @JoinColumn(name = "service_id")
+    private Service service;
 
 }

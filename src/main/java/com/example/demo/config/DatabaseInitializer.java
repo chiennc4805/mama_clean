@@ -72,23 +72,23 @@ public class DatabaseInitializer implements CommandLineRunner {
         }
 
         if (countService == 0) {
-            Service hour_service = new Service();
-            hour_service.setName("Dọn nhà theo giờ");
-            hour_service.setDescription(
+            Service normal_service = new Service();
+            normal_service.setName("Dọn dẹp cơ bản");
+            normal_service.setDescription(
                     "Dịch vụ dọn nhà theo giờ chuyên nghiệp, linh hoạt theo nhu cầu của bạn. Nhân viên được đào tạo kỹ lưỡng, đảm bảo sạch sẽ, gọn gàng và tiết kiệm thời gian. Phù hợp cho nhà ở, căn hộ, văn phòng nhỏ hoặc phòng trọ.");
-            this.serviceRepository.save(hour_service);
+            this.serviceRepository.save(normal_service);
 
-            Service period_service = new Service();
-            period_service.setName("Dọn nhà định kỳ");
-            period_service.setDescription(
+            Service standard_service = new Service();
+            standard_service.setName("Dọn dẹp tiêu chuẩn");
+            standard_service.setDescription(
                     "Dịch vụ dọn dẹp định kỳ chuyên nghiệp, lặp lại hằng tuần theo lịch trình cố định, phù hợp với nhu cầu của bạn. Nhân viên được đào tạo bài bản, đảm bảo không gian luôn sạch sẽ, ngăn nắp, tiết kiệm thời gian. Lý tưởng cho nhà ở, căn hộ, văn phòng nhỏ hoặc phòng trọ.");
-            this.serviceRepository.save(period_service);
+            this.serviceRepository.save(standard_service);
 
-            Service clean_all_service = new Service();
-            clean_all_service.setName("Tổng vệ sinh");
-            clean_all_service.setDescription(
+            Service advance_service = new Service();
+            advance_service.setName("Dọn dẹp nâng cao");
+            advance_service.setDescription(
                     "Dịch vụ tổng vệ sinh chuyên nghiệp, thực hiện định kỳ theo lịch trình hằng tuần hoặc theo yêu cầu, đảm bảo làm sạch sâu toàn bộ không gian. Đội ngũ nhân viên được đào tạo kỹ lưỡng, sử dụng thiết bị và dung dịch vệ sinh hiện đại, mang lại không gian sạch sẽ, gọn gàng, tiết kiệm thời gian. Phù hợp cho nhà ở, căn hộ, văn phòng nhỏ hoặc phòng trọ, đáp ứng mọi nhu cầu làm sạch kỹ lưỡng.");
-            this.serviceRepository.save(clean_all_service);
+            this.serviceRepository.save(advance_service);
 
         }
 
