@@ -1,5 +1,6 @@
 package com.example.demo.service;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -60,6 +61,19 @@ public class UserService {
 
     public void handleDeleteUser(String id) {
         this.userRepository.deleteById(id);
+    }
+
+    public ResultPaginationDTO fetchAll(Specification<User> spec) {
+        List<User> users = this.userRepository.findAll(spec);
+        ResultPaginationDTO res = new ResultPaginationDTO();
+        Meta mt = new ResultPaginationDTO.Meta();
+
+        mt.setTotal(users.size());
+
+        res.setMeta(mt);
+        res.setResult(users);
+
+        return res;
     }
 
     public ResultPaginationDTO fetchAllUsers(Specification<User> spec, Pageable pageable) {

@@ -9,6 +9,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.annotations.UuidGenerator;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.Column;
@@ -33,11 +34,19 @@ public class Booking {
     private String id;
 
     private String address;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy")
     private LocalDate date;
-    private LocalTime starTime;
-    private double area;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "HH:mm:ss")
+    private LocalTime startTime;
     private double totalPrice;
     private String note;
+    private String status; // Mới, Chờ xác nhận, Chờ Check-in, Đang tiến hành, Chờ Check-out, Hoàn thành,
+                           // Đã huỷ, Từ chối phân công
+
+    private String addressLat;
+    private String addressLon;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -55,10 +64,6 @@ public class Booking {
     @JoinColumn(name = "customer_id")
     private User customer;
 
-    @ManyToOne
-    @JoinColumn(name = "booking_status_id")
-    private BookingStatus bookingStatus;
-
     @OneToMany(mappedBy = "booking")
     @JsonIgnore
     private List<Feedback> feedbacks;
@@ -71,4 +76,7 @@ public class Booking {
     @JoinColumn(name = "service_id")
     private Service service;
 
+    // @OneToOne(mappedBy = "booking")
+    // @JsonIgnore
+    // private BookingCheckIn BookingCheckIn;
 }

@@ -8,7 +8,6 @@ import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.annotations.UuidGenerator;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -36,6 +35,7 @@ public class User {
     private String phone;
     private String email;
     private boolean gender;
+    private double balance = 0;
 
     @Column(columnDefinition = "MEDIUMTEXT")
     private String refreshToken;
@@ -71,7 +71,8 @@ public class User {
     private List<UserAddress> userAddresses;
 
     @OneToMany(mappedBy = "user")
-    @JsonIgnoreProperties("user")
+    @JsonIgnore
+    // @JsonIgnoreProperties("user")
     private List<UserActivity> userActivities;
 
 }

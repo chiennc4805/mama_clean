@@ -44,7 +44,7 @@ public class ServiceController {
             @RequestParam(required = false) Integer size) {
 
         if (page == null && size == null) {
-            return ResponseEntity.ok(this.serviceService.fetchAllService());
+            return ResponseEntity.ok(this.serviceService.fetchAllService(spec));
         } else {
             if (page == null) {
                 page = 1;

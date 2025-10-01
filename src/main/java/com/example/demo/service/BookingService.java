@@ -16,9 +16,13 @@ import com.example.demo.repository.BookingRepository;
 public class BookingService {
 
     private final BookingRepository bookingRepository;
+    private final UserService userService;
+    private final ServiceService serviceService;
 
-    public BookingService(BookingRepository bookingRepository) {
+    public BookingService(BookingRepository bookingRepository, UserService userService, ServiceService serviceService) {
         this.bookingRepository = bookingRepository;
+        this.userService = userService;
+        this.serviceService = serviceService;
     }
 
     public ResultPaginationDTO fetchAll(Specification<Booking> spec, Pageable pageable) {
@@ -42,8 +46,17 @@ public class BookingService {
         return serviceOptional.isPresent() ? serviceOptional.get() : null;
     }
 
-    public Booking create(Booking service) {
-        return this.bookingRepository.save(service);
+    public Booking create(Booking booking) {
+        if (booking.getCustomer() != null && booking.getCustomer().getId() != null) {
+            booking.setCustomer(this.userService.fetchUserById(booking.getCustomer().getId()));
+        }
+        if (booking.getCleaner() != null && booking.getCleaner().getId() != null) {
+            booking.setCleaner(this.userService.fetchUserById(booking.getCleaner().getId()));
+        }
+        if (booking.getService().getId() != null) {
+            booking.setService(this.serviceService.fetchById(booking.getService().getId()));
+        }
+        return this.bookingRepository.save(booking);
     }
 
     public void delete(String id) {

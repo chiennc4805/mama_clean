@@ -1,5 +1,6 @@
 package com.example.demo.controller;
 
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.demo.domain.User;
@@ -71,9 +73,20 @@ public class UserController {
     @GetMapping("/users")
     public ResponseEntity<ResultPaginationDTO> fetchAllUsers(
             @Filter Specification<User> spec,
-            Pageable pageable) {
-
-        return ResponseEntity.ok(this.userService.fetchAllUsers(spec, pageable));
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size) {
+        if (page == null && size == null) {
+            return ResponseEntity.ok(this.userService.fetchAll(spec));
+        } else {
+            if (page == null) {
+                page = 1;
+            }
+            if (size == null) {
+                size = 10;
+            }
+            Pageable pageable = PageRequest.of(page - 1, size);
+            return ResponseEntity.ok(this.userService.fetchAllUsers(spec, pageable));
+        }
     }
 
     @GetMapping("/users/{id}")

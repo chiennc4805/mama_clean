@@ -4,6 +4,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,8 +14,12 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import com.example.demo.domain.CleanerProfile;
+import com.example.demo.domain.User;
+import com.example.demo.domain.dto.request.ReqCleanerCreation;
 import com.example.demo.domain.dto.response.ResultPaginationDTO;
 import com.example.demo.service.CleanerProfileService;
+import com.example.demo.service.PendingUserService;
+import com.example.demo.service.UserService;
 import com.example.demo.util.error.IdInvalidException;
 import com.turkraft.springfilter.boot.Filter;
 
@@ -24,15 +29,30 @@ import jakarta.validation.Valid;
 public class CleanerProfileController {
 
     private final CleanerProfileService cleanerProfileService;
+    private final UserService userService;
+    private final PendingUserService pendingUserService;
+    private final PasswordEncoder passwordEncoder;
 
-    public CleanerProfileController(CleanerProfileService cleanerProfileService) {
+    public CleanerProfileController(CleanerProfileService cleanerProfileService, UserService userService,
+            PendingUserService pendingUserService, PasswordEncoder passwordEncoder) {
         this.cleanerProfileService = cleanerProfileService;
+        this.userService = userService;
+        this.pendingUserService = pendingUserService;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @PostMapping("/cleaner-profiles")
-    public ResponseEntity<CleanerProfile> createCleanerProfile(@Valid @RequestBody CleanerProfile reqCleanerProfile)
+    public ResponseEntity<CleanerProfile> createCleanerProfile(
+            @Valid @RequestBody ReqCleanerCreation reqCleanerCreation)
             throws IdInvalidException {
-        CleanerProfile newCleanerProfile = this.cleanerProfileService.create(reqCleanerProfile);
+        User reqUser = reqCleanerCreation.getUserProfile();
+        reqUser.setPassword(this.passwordEncoder.encode(reqUser.getPassword()));
+        User newUser = this.userService.handleCreateUser(reqUser);
+
+        CleanerProfile reqCleaner = reqCleanerCreation.getCleanerProfile();
+        reqCleaner.setUser(newUser);
+
+        CleanerProfile newCleanerProfile = this.cleanerProfileService.create(reqCleaner);
         return ResponseEntity.status(HttpStatus.CREATED).body(newCleanerProfile);
     }
 
@@ -45,11 +65,11 @@ public class CleanerProfileController {
     }
 
     @GetMapping("/cleaner-profiles/{id}")
-    public ResponseEntity<CleanerProfile> fetchCleanerProfileById(@PathVariable("id") String id)
+    public ResponseEntity<CleanerProfile> fetchCleanerProfileById(@PathVariable("id") String userId)
             throws IdInvalidException {
-        CleanerProfile cleanerProfile = this.cleanerProfileService.fetchById(id);
+        CleanerProfile cleanerProfile = this.cleanerProfileService.fetchByUserId(userId);
         if (cleanerProfile == null) {
-            throw new IdInvalidException("CleanerProfile with id = " + id + " không tồn tại");
+            throw new IdInvalidException("User with id = " + userId + " không tồn tại");
         }
         return ResponseEntity.ok(cleanerProfile);
     }

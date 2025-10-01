@@ -29,6 +29,9 @@ public class Service {
     @Column(columnDefinition = "MEDIUMTEXT")
     private String description;
 
+    private double area;
+    private double price;
+
     @OneToMany(mappedBy = "service")
     @JsonIgnore
     private List<Booking> bookings;

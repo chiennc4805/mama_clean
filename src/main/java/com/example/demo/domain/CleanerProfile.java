@@ -1,6 +1,10 @@
 package com.example.demo.domain;
 
+import java.time.LocalDate;
+
 import org.hibernate.annotations.UuidGenerator;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -20,15 +24,21 @@ public class CleanerProfile {
     @UuidGenerator
     private String id;
 
-    private double rating;
+    private LocalDate dob;
+    private double rating = 5;
     private double experience; // unit: days (maybe)
     private boolean available;
     private String area;
     private String bankNo;
     private String bank;
+    private String idNumber;
+    private LocalDate idDate;
+    private String idPlace;
+    private String address;
 
     @OneToOne
     @JoinColumn(name = "user_id")
+    @JsonIgnoreProperties({ "userActivities", "refreshToken", "role" })
     private User user;
 
 }

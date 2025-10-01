@@ -23,6 +23,8 @@ public class ResLoginDTO {
     public static class UserLogin {
         private String id;
         private String name;
+        private String email;
+        private double balance;
         private Role role;
     }
 

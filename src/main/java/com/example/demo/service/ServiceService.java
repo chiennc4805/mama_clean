@@ -21,8 +21,8 @@ public class ServiceService {
         this.serviceRepository = serviceRepository;
     }
 
-    public ResultPaginationDTO fetchAllService() {
-        List<Service> services = this.serviceRepository.findAll();
+    public ResultPaginationDTO fetchAllService(Specification<Service> spec) {
+        List<Service> services = this.serviceRepository.findAll(spec);
         ResultPaginationDTO res = new ResultPaginationDTO();
         Meta mt = new ResultPaginationDTO.Meta();
 

@@ -16,9 +16,11 @@ import com.example.demo.repository.CleanerProfileRepository;
 public class CleanerProfileService {
 
     private final CleanerProfileRepository cleanerProfileRepository;
+    private final UserService userService;
 
-    public CleanerProfileService(CleanerProfileRepository cleanerProfileRepository) {
+    public CleanerProfileService(CleanerProfileRepository cleanerProfileRepository, UserService userService) {
         this.cleanerProfileRepository = cleanerProfileRepository;
+        this.userService = userService;
     }
 
     public ResultPaginationDTO fetchAll(Specification<CleanerProfile> spec, Pageable pageable) {
@@ -51,7 +53,15 @@ public class CleanerProfileService {
     }
 
     public CleanerProfile update(CleanerProfile updatedCleanerProfile) {
+        if (updatedCleanerProfile.getUser().getId() != null) {
+            updatedCleanerProfile.setUser(this.userService.fetchUserById(updatedCleanerProfile.getUser().getId()));
+        }
         return this.cleanerProfileRepository.save(updatedCleanerProfile);
+    }
+
+    public CleanerProfile fetchByUserId(String userId) {
+        Optional<CleanerProfile> cleanerProfileOptional = this.cleanerProfileRepository.findByUserId(userId);
+        return cleanerProfileOptional.isPresent() ? cleanerProfileOptional.get() : null;
     }
 
 }
