@@ -33,6 +33,7 @@ public class Booking {
     @UuidGenerator
     private String id;
 
+    private String name;
     private String address;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "dd/MM/yyyy")
@@ -45,8 +46,8 @@ public class Booking {
     private String status; // Mới, Chờ xác nhận, Chờ Check-in, Đang tiến hành, Chờ Check-out, Hoàn thành,
                            // Đã huỷ, Từ chối phân công
 
-    private String addressLat;
-    private String addressLon;
+    private double addressLat;
+    private double addressLon;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

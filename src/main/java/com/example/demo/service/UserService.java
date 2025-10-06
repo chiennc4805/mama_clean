@@ -10,8 +10,10 @@ import org.springframework.stereotype.Service;
 
 import com.example.demo.domain.Role;
 import com.example.demo.domain.User;
+import com.example.demo.domain.UserActivity;
 import com.example.demo.domain.dto.response.ResultPaginationDTO;
 import com.example.demo.domain.dto.response.ResultPaginationDTO.Meta;
+import com.example.demo.repository.UserActivityRepository;
 import com.example.demo.repository.UserRepository;
 
 @Service
@@ -19,10 +21,13 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final RoleService roleService;
+    private final UserActivityService userActivityService;
 
-    public UserService(UserRepository userRepository, RoleService roleService) {
+    public UserService(UserRepository userRepository, RoleService roleService,
+            UserActivityService userActivityService) {
         this.userRepository = userRepository;
         this.roleService = roleService;
+        this.userActivityService = userActivityService;
     }
 
     public User handleCreateUser(User user) {

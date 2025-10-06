@@ -66,7 +66,7 @@ public class SecurityConfiguration {
             CustomAuthenticationEntryPoint customAuthenticationEntryPoint) throws Exception {
         String[] whiteList = {
                 "/", "/auth/login", "/auth/refresh", "/auth/register", "/auth/verify-otp", "/auth/resend-otp",
-                "/auth/forget-password"
+                "/auth/forget-password", "/upload/**"
         };
         http
                 .csrf(c -> c.disable())

@@ -38,7 +38,7 @@ public class CleanerProfile {
 
     @OneToOne
     @JoinColumn(name = "user_id")
-    @JsonIgnoreProperties({ "userActivities", "refreshToken", "role" })
+    @JsonIgnoreProperties({ "userActivities", "refreshToken" })
     private User user;
 
 }

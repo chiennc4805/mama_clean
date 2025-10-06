@@ -1,8 +1,11 @@
 package com.example.demo.service;
 
+import java.util.Optional;
+
 import org.springframework.stereotype.Service;
 
 import com.example.demo.domain.BookingCheckIn;
+import com.example.demo.domain.BookingCheckOut;
 import com.example.demo.repository.BookingCheckInRepository;
 
 @Service
@@ -21,6 +24,15 @@ public class BookingCheckInService {
             bookingCheckIn.setBooking(this.bookingService.fetchById(bookingCheckIn.getBooking().getId()));
         }
         return this.bookingCheckInRepository.save(bookingCheckIn);
+    }
+
+    public BookingCheckIn fetchById(String id) {
+        Optional<BookingCheckIn> bookingCheckOutOptional = this.bookingCheckInRepository.findById(id);
+        return bookingCheckOutOptional.isPresent() ? bookingCheckOutOptional.get() : null;
+    }
+
+    public void delete(String id) {
+        this.bookingCheckInRepository.deleteById(id);
     }
 
 }

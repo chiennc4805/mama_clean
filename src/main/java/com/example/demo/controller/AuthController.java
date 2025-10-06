@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.demo.domain.PendingUser;
 import com.example.demo.domain.User;
+import com.example.demo.domain.dto.request.ReqChangePassword;
 import com.example.demo.domain.dto.request.ReqLoginDTO;
 import com.example.demo.domain.dto.request.ReqOtpVerification;
 import com.example.demo.domain.dto.response.ResLoginDTO;
@@ -31,6 +32,8 @@ import com.example.demo.util.SecurityUtil;
 import com.example.demo.util.error.IdInvalidException;
 
 import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 
 @RestController
 public class AuthController {
@@ -73,7 +76,8 @@ public class AuthController {
                     currentUserDB.getName(),
                     currentUserDB.getEmail(),
                     currentUserDB.getBalance(),
-                    currentUserDB.getRole());
+                    currentUserDB.getRole(),
+                    currentUserDB.getAvatar());
             res.setUser(userLogin);
         }
         // create access token
@@ -116,6 +120,7 @@ public class AuthController {
             userLogin.setRole(currentUserDB.getRole());
             userLogin.setBalance(currentUserDB.getBalance());
             userLogin.setEmail(username);
+            userLogin.setAvatar(currentUserDB.getAvatar());
 
             userGetAccount.setUser(userLogin);
         }
@@ -147,8 +152,9 @@ public class AuthController {
                     currentUserDB.getId(),
                     currentUserDB.getName(),
                     currentUserDB.getEmail(),
-                    currentUser.getBalance(),
-                    currentUser.getRole());
+                    currentUserDB.getBalance(),
+                    currentUserDB.getRole(),
+                    currentUserDB.getAvatar());
             res.setUser(userLogin);
         }
         // create access token
@@ -302,6 +308,23 @@ public class AuthController {
         PendingUser newPendingUser = this.pendingUserService.create(pendingUser);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(newPendingUser);
+    }
+
+    @PutMapping("/auth/change-password")
+    public ResponseEntity<String> changePassword(@RequestBody ReqChangePassword reqChangePassword)
+            throws IdInvalidException {
+        User userDB = this.userService.fetchUserById(reqChangePassword.getUserId());
+        if (userDB == null) {
+            throw new IdInvalidException("Người dùng với id = " + reqChangePassword.getUserId() + " không tồn tại");
+        }
+        if (passwordEncoder.matches(reqChangePassword.getCurrentPassword(), userDB.getPassword())) {
+            String hashNewPassword = passwordEncoder.encode(reqChangePassword.getNewPassword());
+            userDB.setPassword(hashNewPassword);
+            userService.handleUpdateUser(userDB);
+            return ResponseEntity.ok("Đổi mật khẩu thành công");
+        } else {
+            throw new IdInvalidException("Mật khẩu hiện tại không đúng");
+        }
     }
 
 }

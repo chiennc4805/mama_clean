@@ -1,5 +1,7 @@
 package com.example.demo.service;
 
+import java.util.Optional;
+
 import org.springframework.stereotype.Service;
 
 import com.example.demo.domain.UserActivity;
@@ -16,6 +18,11 @@ public class UserActivityService {
 
     public UserActivity create(UserActivity userActivity) {
         return this.userActivityRepository.save(userActivity);
+    }
+
+    public UserActivity getLatestActivityByUserId(String userId) {
+        UserActivity latestActivity = userActivityRepository.findTopByUserIdOrderByRequestTimeDesc(userId).orElse(null);
+        return latestActivity;
     }
 
 }

@@ -26,6 +26,7 @@ public class ResLoginDTO {
         private String email;
         private double balance;
         private Role role;
+        private String avatar;
     }
 
     @Getter
