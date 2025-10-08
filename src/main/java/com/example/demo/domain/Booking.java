@@ -11,6 +11,7 @@ import org.hibernate.annotations.UuidGenerator;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -65,9 +66,9 @@ public class Booking {
     @JoinColumn(name = "customer_id")
     private User customer;
 
-    @OneToMany(mappedBy = "booking")
-    @JsonIgnore
-    private List<Feedback> feedbacks;
+    @OneToOne(mappedBy = "booking")
+    @JsonIgnoreProperties("booking")
+    private Feedback feedback;
 
     @OneToOne(mappedBy = "booking")
     @JsonIgnore

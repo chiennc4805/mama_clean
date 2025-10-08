@@ -26,6 +26,7 @@ public class CleanerProfile {
 
     private LocalDate dob;
     private double rating = 5;
+    private int ratingCount = 1;
     private double experience; // unit: days (maybe)
     private boolean available;
     private String area;

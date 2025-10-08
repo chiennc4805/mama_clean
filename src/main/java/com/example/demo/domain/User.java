@@ -71,8 +71,6 @@ public class User {
     @JsonIgnore
     private List<Booking> workings;
 
-    // feedback ??
-
     @OneToMany(mappedBy = "user")
     @JsonIgnore
     private List<UserAddress> userAddresses;

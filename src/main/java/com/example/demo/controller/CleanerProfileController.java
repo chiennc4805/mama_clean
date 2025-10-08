@@ -1,5 +1,8 @@
 package com.example.demo.controller;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
@@ -25,6 +28,7 @@ import com.example.demo.util.error.IdInvalidException;
 import com.turkraft.springfilter.boot.Filter;
 
 import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
 public class CleanerProfileController {
@@ -94,6 +98,26 @@ public class CleanerProfileController {
         }
         this.cleanerProfileService.delete(id);
         return ResponseEntity.ok(null);
+    }
+
+    @PutMapping("/cleaner-profiles/{id}")
+    public ResponseEntity<CleanerProfile> calCulateAndUpdateRating(@PathVariable("id") String userId,
+            @RequestParam("rating") double rating) throws IdInvalidException {
+        CleanerProfile cleanerProfileDB = this.cleanerProfileService.fetchByUserId(userId);
+        if (cleanerProfileDB != null) {
+            int newRatingCount = cleanerProfileDB.getRatingCount() + 1;
+            double newRating = (cleanerProfileDB.getRating() + rating) / newRatingCount;
+            double rounded = new BigDecimal(
+                    newRating)
+                    .setScale(2, RoundingMode.HALF_UP)
+                    .doubleValue();
+            cleanerProfileDB.setRating(rounded);
+            cleanerProfileDB.setRatingCount(newRatingCount);
+            CleanerProfile updatedCleaner = this.cleanerProfileService.update(cleanerProfileDB);
+            return ResponseEntity.ok(updatedCleaner);
+        } else {
+            throw new IdInvalidException("Cleaner không tồn tại!");
+        }
     }
 
 }
