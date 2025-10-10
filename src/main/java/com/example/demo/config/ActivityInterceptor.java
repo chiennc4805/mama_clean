@@ -32,7 +32,6 @@ public class ActivityInterceptor implements HandlerInterceptor {
         // Lấy JWT từ header
         String authHeader = request.getHeader("Authorization");
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String token = authHeader.substring(7);
 
             // Lấy username từ JWT
             String username = SecurityUtil.getCurrentUserLogin().isPresent() ? SecurityUtil.getCurrentUserLogin().get()

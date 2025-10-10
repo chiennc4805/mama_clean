@@ -1,5 +1,7 @@
 package com.example.demo.domain.dto.response;
 
+import java.math.BigDecimal;
+
 import com.example.demo.domain.Role;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -24,7 +26,7 @@ public class ResLoginDTO {
         private String id;
         private String name;
         private String email;
-        private double balance;
+        private BigDecimal balance;
         private Role role;
         private String avatar;
     }

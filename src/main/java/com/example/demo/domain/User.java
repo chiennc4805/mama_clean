@@ -1,6 +1,7 @@
 package com.example.demo.domain;
 
 import java.beans.Transient;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
@@ -42,7 +43,9 @@ public class User {
     private String phone;
     private String email;
     private boolean gender;
-    private double balance = 0;
+
+    @Column(precision = 18, scale = 2)
+    private BigDecimal balance = BigDecimal.valueOf(0);
 
     @Column(columnDefinition = "MEDIUMTEXT")
     private String refreshToken;
@@ -83,18 +86,16 @@ public class User {
     @JsonIgnore
     private CleanerProfile cleanerProfile;
 
-    // @JsonProperty("latestActivity")
-    // @Transient
-    // public UserActivity getLatestActivity() {
-    // if (userActivities == null || userActivities.isEmpty())
-    // return null;
-    // return userActivities.stream()
-    // .max(Comparator.comparing(UserActivity::getRequestTime))
-    // .orElse(null);
-    // }
-
     @Formula("(SELECT ua.request_time FROM user_activities ua WHERE ua.user_id = id ORDER BY ua.request_time DESC LIMIT 1)")
     private LocalDateTime latestActivityTime;
+
+    @OneToMany(mappedBy = "user")
+    @JsonIgnore
+    private List<Payment> payments;
+
+    @OneToMany(mappedBy = "user")
+    @JsonIgnore
+    private List<WalletTransaction> walletTransactions;
 
 }
 

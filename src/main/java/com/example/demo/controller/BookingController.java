@@ -1,5 +1,7 @@
 package com.example.demo.controller;
 
+import java.math.BigDecimal;
+
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -17,8 +19,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.demo.domain.Booking;
+import com.example.demo.domain.User;
+import com.example.demo.domain.WalletTransaction;
 import com.example.demo.domain.dto.response.ResultPaginationDTO;
 import com.example.demo.service.BookingService;
+import com.example.demo.service.UserService;
+import com.example.demo.service.WalletTransactionService;
 import com.example.demo.util.error.IdInvalidException;
 import com.turkraft.springfilter.boot.Filter;
 
@@ -28,15 +34,43 @@ import jakarta.validation.Valid;
 public class BookingController {
 
     private final BookingService bookingService;
+    private final UserService userService;
+    private final WalletTransactionService walletTransactionService;
 
-    public BookingController(BookingService bookingService) {
+    public BookingController(BookingService bookingService, UserService userService,
+            WalletTransactionService walletTransactionService) {
         this.bookingService = bookingService;
+        this.userService = userService;
+        this.walletTransactionService = walletTransactionService;
     }
 
     @PostMapping("/bookings")
     public ResponseEntity<Booking> createBooking(@Valid @RequestBody Booking reqBooking)
-            throws IdInvalidException {
+            throws Exception {
+        if (reqBooking.getCustomer() == null) {
+            throw new IdInvalidException("Lịch đặt bị thiếu thông tin khách hàng");
+        }
+        User user = this.userService.fetchUserById(reqBooking.getCustomer().getId());
+        if (user != null) {
+            if (user.getBalance().compareTo(BigDecimal.valueOf(reqBooking.getTotalPrice())) >= 0) {
+                user.setBalance(user.getBalance().subtract(BigDecimal.valueOf(reqBooking.getTotalPrice())));
+                this.userService.handleUpdateUser(user);
+            } else {
+                throw new Exception("Số dư tài khoản không đủ");
+            }
+        } else {
+            throw new Exception("Khách hàng không tồn tại");
+        }
+
         Booking newBooking = this.bookingService.create(reqBooking);
+
+        WalletTransaction transaction = new WalletTransaction();
+        transaction.setAmount(BigDecimal.valueOf(reqBooking.getTotalPrice()));
+        transaction.setRef_id(newBooking.getId());
+        transaction.setType("BOOKING_PAYMENT");
+        transaction.setUser(user);
+        this.walletTransactionService.create(transaction);
+
         return ResponseEntity.status(HttpStatus.CREATED).body(newBooking);
     }
 

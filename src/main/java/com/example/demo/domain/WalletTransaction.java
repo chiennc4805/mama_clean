@@ -1,11 +1,9 @@
 package com.example.demo.domain;
 
 import java.math.BigDecimal;
-import java.sql.Timestamp;
 import java.time.LocalDateTime;
 
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.annotations.UuidGenerator;
 
 import jakarta.persistence.Column;
@@ -20,8 +18,8 @@ import lombok.Setter;
 @Getter
 @Setter
 @Entity
-@Table(name = "payments")
-public class Payment {
+@Table(name = "wallet_transactions")
+public class WalletTransaction {
 
     @Id
     @UuidGenerator
@@ -29,11 +27,8 @@ public class Payment {
 
     @Column(precision = 18, scale = 2)
     private BigDecimal amount;
-    private String type; // 'DEPOSIT' hoặc 'WITHDRAW'
-    private String status = "PENDING"; // 'PENDING', 'SUCCESS', 'FAILED'
-    private String bankTransactionRef;
-    private LocalDateTime transactionTime;
-    private String content;
+    private String type; // 'BOOKING_PAYMENT', 'REFUND', 'BONUS', ...
+    private String ref_id; // id liên quan (ví dụ booking_id)
 
     @ManyToOne
     @JoinColumn(name = "user_id")
@@ -42,9 +37,5 @@ public class Payment {
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
-
-    @UpdateTimestamp
-    @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt;
 
 }

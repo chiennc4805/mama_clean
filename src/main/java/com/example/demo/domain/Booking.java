@@ -70,15 +70,7 @@ public class Booking {
     @JsonIgnoreProperties("booking")
     private Feedback feedback;
 
-    @OneToOne(mappedBy = "booking")
-    @JsonIgnore
-    private Payment payment;
-
     @ManyToOne
     @JoinColumn(name = "service_id")
     private Service service;
-
-    // @OneToOne(mappedBy = "booking")
-    // @JsonIgnore
-    // private BookingCheckIn BookingCheckIn;
 }

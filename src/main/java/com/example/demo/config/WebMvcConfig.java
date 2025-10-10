@@ -1,14 +1,9 @@
 package com.example.demo.config;
 
-import java.io.File;
-import java.nio.file.Paths;
-
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-
-import jakarta.annotation.PostConstruct;
 
 @Configuration
 public class WebMvcConfig implements WebMvcConfigurer {
