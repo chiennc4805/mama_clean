@@ -1,6 +1,7 @@
 package com.example.demo.controller;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -19,10 +20,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.demo.domain.Booking;
+import com.example.demo.domain.CleanerProfile;
 import com.example.demo.domain.User;
 import com.example.demo.domain.WalletTransaction;
 import com.example.demo.domain.dto.response.ResultPaginationDTO;
 import com.example.demo.service.BookingService;
+import com.example.demo.service.CleanerProfileService;
 import com.example.demo.service.UserService;
 import com.example.demo.service.WalletTransactionService;
 import com.example.demo.util.error.IdInvalidException;
@@ -36,12 +39,14 @@ public class BookingController {
     private final BookingService bookingService;
     private final UserService userService;
     private final WalletTransactionService walletTransactionService;
+    private final CleanerProfileService cleanerProfileService;
 
     public BookingController(BookingService bookingService, UserService userService,
-            WalletTransactionService walletTransactionService) {
+            WalletTransactionService walletTransactionService, CleanerProfileService cleanerProfileService) {
         this.bookingService = bookingService;
         this.userService = userService;
         this.walletTransactionService = walletTransactionService;
+        this.cleanerProfileService = cleanerProfileService;
     }
 
     @PostMapping("/bookings")
@@ -68,6 +73,7 @@ public class BookingController {
         transaction.setAmount(BigDecimal.valueOf(reqBooking.getTotalPrice()));
         transaction.setRef_id(newBooking.getId());
         transaction.setType("BOOKING_PAYMENT");
+        transaction.setStatus("SUCCESS");
         transaction.setUser(user);
         this.walletTransactionService.create(transaction);
 
@@ -111,6 +117,37 @@ public class BookingController {
         if (booking == null) {
             throw new IdInvalidException("Booking with id = " + reqBooking.getId() + " không tồn tại");
         }
+        if (reqBooking.getStatus().equals("Đã hoàn thành") && booking.getStatus().equals("Chờ Check-out")) {
+            if (reqBooking.getCleaner() == null) {
+                throw new IdInvalidException("Lịch đặt không có người dọn dẹp");
+            }
+            User cleaner = this.userService.fetchUserById(reqBooking.getCleaner().getId());
+            if (cleaner == null) {
+                throw new IdInvalidException("Người dọn dẹp không tồn tại");
+            }
+            CleanerProfile cleanerProfile = this.cleanerProfileService.fetchByUserId(cleaner.getId());
+            BigDecimal income = BigDecimal.valueOf(Math.round(reqBooking.getTotalPrice() * 0.8));
+            cleaner.setBalance(income);
+            cleanerProfile.setTotalIncome(cleanerProfile.getTotalIncome().add(income));
+            this.userService.handleUpdateUser(cleaner);
+        } else if (reqBooking.getStatus().equals("Đã huỷ") && !booking.getStatus().equals("Đã huỷ")) {
+            // refund for customer when cancel booking
+            User customer = this.userService.fetchUserById(reqBooking.getCustomer().getId());
+            if (customer == null) {
+                throw new IdInvalidException("Khách hàng không tồn tại");
+            }
+            customer.setBalance(customer.getBalance().add(BigDecimal.valueOf(reqBooking.getTotalPrice())));
+            this.userService.handleUpdateUser(customer);
+
+            // create transaction type refund
+            WalletTransaction transaction = new WalletTransaction();
+            transaction.setAmount(BigDecimal.valueOf(reqBooking.getTotalPrice()));
+            transaction.setRef_id(reqBooking.getId());
+            transaction.setType("REFUND");
+            transaction.setStatus("SUCCESS");
+            transaction.setUser(customer);
+            this.walletTransactionService.create(transaction);
+        }
         Booking updatedBooking = this.bookingService.update(reqBooking);
         return ResponseEntity.ok(updatedBooking);
     }
@@ -125,7 +162,7 @@ public class BookingController {
         if (booking.getCleaner() != null) {
             throw new Exception("Công việc đã có người nhận. Thao tác thất bại.");
         }
-        if (booking.getStatus() == "Đã Huỷ") {
+        if (booking.getStatus().equals("Đã huỷ")) {
             throw new Exception("Công việc đã bị huỷ. Thao tác thất bại.");
         }
         Booking updatedBooking = this.bookingService.update(reqBooking);
@@ -139,11 +176,19 @@ public class BookingController {
         if (booking == null) {
             throw new IdInvalidException("Booking with id = " + reqBooking.getId() + " không tồn tại");
         }
-        if (booking.getCleaner() != null || booking.getStatus() == "Đã Huỷ") {
+        if (booking.getCleaner() != null || booking.getStatus().equals("Đã huỷ")) {
             throw new Exception("Công việc không còn sẵn. Thao tác thất bại.");
         }
         Booking updatedBooking = this.bookingService.update(reqBooking);
         return ResponseEntity.ok(updatedBooking);
+    }
+
+    @GetMapping("/get-all-booking-income")
+    public ResponseEntity<Double> getMethodName() {
+        List<Booking> bookings = this.bookingService.fetchAll();
+        Double allBookingIncome = bookings.stream().mapToDouble(Booking::getTotalPrice)
+                .sum();
+        return ResponseEntity.ok(allBookingIncome);
     }
 
     @DeleteMapping("/bookings/{id}")

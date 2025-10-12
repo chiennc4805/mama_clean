@@ -42,6 +42,10 @@ public class BookingService {
         return res;
     }
 
+    public List<Booking> fetchAll() {
+        return this.bookingRepository.findAll();
+    }
+
     public ResultPaginationDTO fetchAll(Specification<Booking> spec) {
         List<Booking> bookings = this.bookingRepository.findAll(spec);
         ResultPaginationDTO res = new ResultPaginationDTO();

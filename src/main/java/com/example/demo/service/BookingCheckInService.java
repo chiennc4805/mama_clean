@@ -31,6 +31,11 @@ public class BookingCheckInService {
         return bookingCheckOutOptional.isPresent() ? bookingCheckOutOptional.get() : null;
     }
 
+    public BookingCheckIn fetchByBookingId(String bookingId) {
+        Optional<BookingCheckIn> bookingCheckOutOptional = this.bookingCheckInRepository.findByBookingId(bookingId);
+        return bookingCheckOutOptional.isPresent() ? bookingCheckOutOptional.get() : null;
+    }
+
     public void delete(String id) {
         this.bookingCheckInRepository.deleteById(id);
     }

@@ -80,13 +80,17 @@ public class BookingCheckOutController {
     }
 
     @GetMapping("/booking/checkout/{id}")
-    public ResponseEntity<BookingCheckOut> fetchBookingCheckOutById(@PathVariable("id") String id)
-            throws IdInvalidException {
-        BookingCheckOut service = this.bookingCheckOutService.fetchById(id);
-        if (service == null) {
-            throw new IdInvalidException("BookingCheckOut with id = " + id + " không tồn tại");
+    public ResponseEntity<BookingCheckOut> fetchBookingCheckOutByBookingId(@PathVariable("id") String bookingId)
+            throws Exception {
+        Booking booking = this.bookingService.fetchById(bookingId);
+        if (booking == null) {
+            throw new Exception("Đặt lịch không tồn tại");
         }
-        return ResponseEntity.ok(service);
+        BookingCheckOut bookingCheckOut = this.bookingCheckOutService.fetchByBookingId(bookingId);
+        if (bookingCheckOut == null) {
+            throw new IdInvalidException("Thông tin Check-out không tồn tại");
+        }
+        return ResponseEntity.ok(bookingCheckOut);
     }
 
     @PutMapping("/booking/checkout")

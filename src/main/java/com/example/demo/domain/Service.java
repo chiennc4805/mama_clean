@@ -25,6 +25,7 @@ public class Service {
     private String id;
 
     private String name;
+    private int duration; // unit: hour
 
     @Column(columnDefinition = "MEDIUMTEXT")
     private String description;

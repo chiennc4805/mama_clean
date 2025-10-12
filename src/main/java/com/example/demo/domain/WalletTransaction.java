@@ -29,6 +29,7 @@ public class WalletTransaction {
     private BigDecimal amount;
     private String type; // 'BOOKING_PAYMENT', 'REFUND', 'BONUS', ...
     private String ref_id; // id liên quan (ví dụ booking_id)
+    private String status; // SUCCESS, PENDING, DENIED
 
     @ManyToOne
     @JoinColumn(name = "user_id")

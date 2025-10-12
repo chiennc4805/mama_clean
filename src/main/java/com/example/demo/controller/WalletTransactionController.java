@@ -1,7 +1,10 @@
 package com.example.demo.controller;
 
+import java.math.BigDecimal;
+
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,8 +17,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.demo.domain.User;
 import com.example.demo.domain.WalletTransaction;
 import com.example.demo.domain.dto.response.ResultPaginationDTO;
+import com.example.demo.service.UserService;
 import com.example.demo.service.WalletTransactionService;
 import com.example.demo.util.error.IdInvalidException;
 import com.turkraft.springfilter.boot.Filter;
@@ -26,15 +31,33 @@ import jakarta.validation.Valid;
 public class WalletTransactionController {
 
     private final WalletTransactionService walletTransactionService;
+    private final UserService userService;
 
-    public WalletTransactionController(WalletTransactionService walletTransactionService) {
+    public WalletTransactionController(WalletTransactionService walletTransactionService, UserService userService) {
         this.walletTransactionService = walletTransactionService;
+        this.userService = userService;
     }
 
     @PostMapping("/transactions")
     public ResponseEntity<WalletTransaction> createWalletTransaction(
             @Valid @RequestBody WalletTransaction reqWalletTransaction)
-            throws IdInvalidException {
+            throws Exception {
+        // cleaner rút tiền
+        if (reqWalletTransaction.getType().equals("WITHDRAW")) {
+            if (reqWalletTransaction.getUser() == null) {
+                throw new Exception("Giao dịch không có người tạo");
+            }
+            User user = this.userService.fetchUserById(reqWalletTransaction.getUser().getId());
+            if (user == null) {
+                throw new Exception("Người dùng không tồn tại");
+            }
+            if (user.getBalance().compareTo(reqWalletTransaction.getAmount()) == -1) {
+                throw new Exception("Số dư không đủ");
+            }
+            // user.setBalance(user.getBalance().subtract(reqWalletTransaction.getAmount()));
+            // this.userService.handleUpdateUser(user);
+        }
+
         WalletTransaction newWalletTransaction = this.walletTransactionService.create(reqWalletTransaction);
         return ResponseEntity.status(HttpStatus.CREATED).body(newWalletTransaction);
     }
@@ -54,7 +77,7 @@ public class WalletTransactionController {
             if (size == null) {
                 size = 10;
             }
-            Pageable pageable = PageRequest.of(page - 1, size);
+            Pageable pageable = PageRequest.of(page - 1, size, Sort.by("createdAt").descending());
             return ResponseEntity.ok(this.walletTransactionService.fetchAll(spec, pageable));
         }
     }
@@ -72,11 +95,27 @@ public class WalletTransactionController {
     @PutMapping("/transactions")
     public ResponseEntity<WalletTransaction> updateWalletTransaction(
             @Valid @RequestBody WalletTransaction reqWalletTransaction)
-            throws IdInvalidException {
+            throws Exception {
         WalletTransaction walletTransaction = this.walletTransactionService.fetchById(reqWalletTransaction.getId());
         if (walletTransaction == null) {
             throw new IdInvalidException(
                     "WalletTransaction with id = " + reqWalletTransaction.getId() + " không tồn tại");
+        }
+        if (reqWalletTransaction.getType().equals("WITHDRAW")) {
+            if (walletTransaction.getStatus().equals("PENDING") && reqWalletTransaction.getStatus().equals("SUCCESS")) {
+                if (reqWalletTransaction.getUser() == null) {
+                    throw new Exception("Giao dịch không có người tạo");
+                }
+                User user = this.userService.fetchUserById(reqWalletTransaction.getUser().getId());
+                if (user == null) {
+                    throw new Exception("Người dùng không tồn tại");
+                }
+                if (user.getBalance().compareTo(reqWalletTransaction.getAmount()) == -1) {
+                    throw new Exception("Số dư không đủ");
+                }
+                user.setBalance(user.getBalance().subtract(reqWalletTransaction.getAmount()));
+                this.userService.handleUpdateUser(user);
+            }
         }
         WalletTransaction updatedWalletTransaction = this.walletTransactionService.update(reqWalletTransaction);
         return ResponseEntity.ok(updatedWalletTransaction);

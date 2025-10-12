@@ -101,17 +101,18 @@ public class CleanerProfileController {
     }
 
     @PutMapping("/cleaner-profiles/{id}")
-    public ResponseEntity<CleanerProfile> calCulateAndUpdateRating(@PathVariable("id") String userId,
+    public ResponseEntity<CleanerProfile> calculateAndUpdateRating(@PathVariable("id") String userId,
             @RequestParam("rating") double rating) throws IdInvalidException {
         CleanerProfile cleanerProfileDB = this.cleanerProfileService.fetchByUserId(userId);
         if (cleanerProfileDB != null) {
+            BigDecimal totalOld = BigDecimal.valueOf(
+                    cleanerProfileDB.getRating()).multiply(BigDecimal.valueOf(cleanerProfileDB.getRatingCount()));
+            BigDecimal totalNew = totalOld.add(BigDecimal.valueOf(rating));
             int newRatingCount = cleanerProfileDB.getRatingCount() + 1;
-            double newRating = (cleanerProfileDB.getRating() + rating) / newRatingCount;
-            double rounded = new BigDecimal(
-                    newRating)
-                    .setScale(2, RoundingMode.HALF_UP)
-                    .doubleValue();
-            cleanerProfileDB.setRating(rounded);
+            BigDecimal newAvgBd = totalNew.divide(BigDecimal.valueOf(newRatingCount), 4, RoundingMode.HALF_UP);
+            double newAvgRounded = newAvgBd.setScale(2, RoundingMode.HALF_UP).doubleValue();
+
+            cleanerProfileDB.setRating(newAvgRounded);
             cleanerProfileDB.setRatingCount(newRatingCount);
             CleanerProfile updatedCleaner = this.cleanerProfileService.update(cleanerProfileDB);
             return ResponseEntity.ok(updatedCleaner);

@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.example.demo.domain.Booking;
 import com.example.demo.domain.BookingCheckIn;
 import com.example.demo.domain.BookingCheckOut;
+import com.example.demo.domain.Feedback;
 import com.example.demo.domain.dto.request.reqCheckIn;
 import com.example.demo.service.BookingCheckInService;
 import com.example.demo.service.BookingService;
@@ -48,16 +50,27 @@ public class BookingCheckInController {
         return ResponseEntity.ok(msg);
     }
 
+    @GetMapping("/booking/checkin/{id}")
+    public ResponseEntity<BookingCheckIn> fetchCheckInByBookingId(@PathVariable("id") String bookingId)
+            throws Exception {
+        Booking booking = this.bookingService.fetchById(bookingId);
+        if (booking == null) {
+            throw new Exception("Đặt lịch không tồn tại");
+        }
+        BookingCheckIn bookingCheckIn = this.bookingCheckInService.fetchByBookingId(bookingId);
+        if (bookingCheckIn == null) {
+            throw new IdInvalidException("Thông tin check-in không tồn tại");
+        }
+        return ResponseEntity.ok(bookingCheckIn);
+    }
+
     @PostMapping("/booking/checkin")
     public ResponseEntity<BookingCheckIn> createBooking(@Valid @RequestBody BookingCheckIn reqBookingCheckIn)
             throws Exception {
         if (reqBookingCheckIn.getBooking() != null && reqBookingCheckIn.getBooking().getId() != null) {
             Booking bookingDB = this.bookingService.fetchById(reqBookingCheckIn.getBooking().getId());
-            if (LocalDate.now().isEqual(bookingDB.getDate()) && LocalTime.now().isBefore(bookingDB.getStartTime())) {
+            if (LocalDate.now().isEqual(bookingDB.getDate())) {
                 reqBookingCheckIn.setBooking(bookingDB);
-            } else if (LocalDate.now().isEqual(bookingDB.getDate())
-                    && LocalTime.now().isAfter(bookingDB.getStartTime())) {
-                throw new Exception("Đã quá giờ. Check-in thất bại. Vui lòng liên hệ quản lý!");
             } else {
                 throw new Exception("Check-in không thành công. Vui lòng liên hệ quản lý để biết thêm chi tiết!");
             }
@@ -66,6 +79,11 @@ public class BookingCheckInController {
         }
         BookingCheckIn newBooking = this.bookingCheckInService.create(reqBookingCheckIn);
         return ResponseEntity.status(HttpStatus.CREATED).body(newBooking);
+
+        // }else
+        // if(LocalDate.now().isEqual(bookingDB.getDate())&&LocalTime.now().isAfter(bookingDB.getStartTime()))
+        // throw new Exception("Đã quá giờ. Check-in thất bại. Vui lòng liên hệ quản
+        // lý!");
     }
 
     @DeleteMapping("/booking/checkin/{id}")

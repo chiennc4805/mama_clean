@@ -71,6 +71,10 @@ public class WalletTransactionService {
     }
 
     public WalletTransaction update(WalletTransaction updatedWalletTransaction) {
+        if (updatedWalletTransaction.getUser() != null && updatedWalletTransaction.getUser().getId() != null) {
+            updatedWalletTransaction.setUser(this.userService.fetchUserById(
+                    updatedWalletTransaction.getUser().getId()));
+        }
         return this.walletTransactionRepository.save(updatedWalletTransaction);
     }
 }

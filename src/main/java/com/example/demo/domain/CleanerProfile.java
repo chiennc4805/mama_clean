@@ -1,11 +1,13 @@
 package com.example.demo.domain;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 import org.hibernate.annotations.UuidGenerator;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
@@ -36,6 +38,9 @@ public class CleanerProfile {
     private LocalDate idDate;
     private String idPlace;
     private String address;
+
+    @Column(precision = 18, scale = 2)
+    private BigDecimal totalIncome = BigDecimal.valueOf(0);
 
     @OneToOne
     @JoinColumn(name = "user_id")

@@ -109,31 +109,37 @@ public class DatabaseInitializer implements CommandLineRunner {
             this.cleanerProfileRepository.save(cleanerProfile);
         }
 
-        if (countService == 0) {
-            Service normal_service = new Service();
-            normal_service.setName("Dọn dẹp cơ bản");
-            normal_service.setDescription(
-                    "Dịch vụ dọn nhà chuyên nghiệp, linh hoạt theo nhu cầu của bạn. Nhân viên được đào tạo kỹ lưỡng, đảm bảo sạch sẽ, gọn gàng và tiết kiệm thời gian. Phù hợp cho nhà ở, căn hộ, văn phòng nhỏ hoặc phòng trọ.");
-            normal_service.setArea(20);
-            normal_service.setPrice(100000);
-            this.serviceRepository.save(normal_service);
+        // if (countService == 0) {
+        // Service normal_service = new Service();
+        // normal_service.setName("Dọn dẹp cơ bản");
+        // normal_service.setDescription(
+        // "Dịch vụ dọn nhà chuyên nghiệp, linh hoạt theo nhu cầu của bạn. Nhân viên
+        // được đào tạo kỹ lưỡng, đảm bảo sạch sẽ, gọn gàng và tiết kiệm thời gian. Phù
+        // hợp cho nhà ở, căn hộ, văn phòng nhỏ hoặc phòng trọ.");
+        // normal_service.setArea(20);
+        // normal_service.setPrice(100000);
+        // this.serviceRepository.save(normal_service);
 
-            normal_service = new Service();
-            normal_service.setName("Dọn dẹp cơ bản");
-            normal_service.setDescription(
-                    "Dịch vụ dọn nhà chuyên nghiệp, linh hoạt theo nhu cầu của bạn. Nhân viên được đào tạo kỹ lưỡng, đảm bảo sạch sẽ, gọn gàng và tiết kiệm thời gian. Phù hợp cho nhà ở, căn hộ, văn phòng nhỏ hoặc phòng trọ.");
-            normal_service.setArea(30);
-            normal_service.setPrice(150000);
-            this.serviceRepository.save(normal_service);
+        // normal_service = new Service();
+        // normal_service.setName("Dọn dẹp cơ bản");
+        // normal_service.setDescription(
+        // "Dịch vụ dọn nhà chuyên nghiệp, linh hoạt theo nhu cầu của bạn. Nhân viên
+        // được đào tạo kỹ lưỡng, đảm bảo sạch sẽ, gọn gàng và tiết kiệm thời gian. Phù
+        // hợp cho nhà ở, căn hộ, văn phòng nhỏ hoặc phòng trọ.");
+        // normal_service.setArea(30);
+        // normal_service.setPrice(150000);
+        // this.serviceRepository.save(normal_service);
 
-            normal_service = new Service();
-            normal_service.setName("Dọn dẹp cơ bản");
-            normal_service.setDescription(
-                    "Dịch vụ dọn nhà chuyên nghiệp, linh hoạt theo nhu cầu của bạn. Nhân viên được đào tạo kỹ lưỡng, đảm bảo sạch sẽ, gọn gàng và tiết kiệm thời gian. Phù hợp cho nhà ở, căn hộ, văn phòng nhỏ hoặc phòng trọ.");
-            normal_service.setArea(40);
-            normal_service.setPrice(200000);
-            this.serviceRepository.save(normal_service);
-        }
+        // normal_service = new Service();
+        // normal_service.setName("Dọn dẹp cơ bản");
+        // normal_service.setDescription(
+        // "Dịch vụ dọn nhà chuyên nghiệp, linh hoạt theo nhu cầu của bạn. Nhân viên
+        // được đào tạo kỹ lưỡng, đảm bảo sạch sẽ, gọn gàng và tiết kiệm thời gian. Phù
+        // hợp cho nhà ở, căn hộ, văn phòng nhỏ hoặc phòng trọ.");
+        // normal_service.setArea(40);
+        // normal_service.setPrice(200000);
+        // this.serviceRepository.save(normal_service);
+        // }
 
     }
 

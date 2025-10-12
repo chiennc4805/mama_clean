@@ -56,6 +56,11 @@ public class BookingCheckOutService {
         return bookingCheckOutOptional.isPresent() ? bookingCheckOutOptional.get() : null;
     }
 
+    public BookingCheckOut fetchByBookingId(String bookingId) {
+        Optional<BookingCheckOut> bookingCheckOutOptional = this.bookingCheckOutRepository.findByBookingId(bookingId);
+        return bookingCheckOutOptional.isPresent() ? bookingCheckOutOptional.get() : null;
+    }
+
     public BookingCheckOut create(BookingCheckOut bookingCheckOut) {
         return this.bookingCheckOutRepository.save(bookingCheckOut);
     }
