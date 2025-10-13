@@ -2,6 +2,7 @@ package com.example.demo.controller;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.nio.file.AccessDeniedException;
 
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -49,7 +50,7 @@ public class CleanerProfileController {
     @PostMapping("/cleaner-profiles")
     public ResponseEntity<CleanerProfile> createCleanerProfile(
             @Valid @RequestBody ReqCleanerCreation reqCleanerCreation)
-            throws IdInvalidException {
+            throws IdInvalidException, AccessDeniedException {
         User reqUser = reqCleanerCreation.getUserProfile();
         reqUser.setPassword(this.passwordEncoder.encode(reqUser.getPassword()));
         User newUser = this.userService.handleCreateUser(reqUser);

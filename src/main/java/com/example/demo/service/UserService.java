@@ -1,11 +1,16 @@
 package com.example.demo.service;
 
+import java.math.BigDecimal;
+import java.nio.file.AccessDeniedException;
 import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import com.example.demo.domain.Role;
@@ -15,6 +20,7 @@ import com.example.demo.domain.dto.response.ResultPaginationDTO;
 import com.example.demo.domain.dto.response.ResultPaginationDTO.Meta;
 import com.example.demo.repository.UserActivityRepository;
 import com.example.demo.repository.UserRepository;
+import com.example.demo.util.SecurityUtil;
 
 @Service
 public class UserService {
@@ -30,12 +36,24 @@ public class UserService {
         this.userActivityService = userActivityService;
     }
 
-    public User handleCreateUser(User user) {
-        if (user.getRole() != null) {
-            Role role = this.roleService.handleFetchRoleByName(user.getRole().getName());
+    public User handleCreateUser(User user) throws AccessDeniedException {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String roleName = auth.getAuthorities().stream().map(GrantedAuthority::getAuthority).findFirst().orElse("");
+
+        if (roleName.equals("ROLE_ANONYMOUS")) {
+            Role role = this.roleService.handleFetchRoleByName("CUSTOMER");
             user.setRole(role);
+            user.setBalance(BigDecimal.valueOf(0));
+            return this.userRepository.save(user);
         }
-        return this.userRepository.save(user);
+        if (roleName.equals("ROLE_SUPER_ADMIN")) {
+            if (user.getRole() != null) {
+                Role role = this.roleService.handleFetchRoleByName(user.getRole().getName());
+                user.setRole(role);
+            }
+            return this.userRepository.save(user);
+        }
+        throw new AccessDeniedException("Bạn không có quyền tạo người dùng");
     }
 
     public User fetchUserById(String id) {

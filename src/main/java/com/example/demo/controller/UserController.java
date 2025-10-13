@@ -1,5 +1,7 @@
 package com.example.demo.controller;
 
+import java.nio.file.AccessDeniedException;
+
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -35,11 +37,11 @@ public class UserController {
     }
 
     @PostMapping("/users")
-    public ResponseEntity<User> createUser(@Valid @RequestBody User reqUser) throws IdInvalidException {
+    public ResponseEntity<User> createUser(@Valid @RequestBody User reqUser)
+            throws IdInvalidException, AccessDeniedException {
         if (this.userService.isExistByUsername(reqUser.getUsername())) {
             throw new IdInvalidException("Tài khoản " + reqUser.getUsername() + " đã tồn tại");
         }
-
         String hashPassword = this.passwordEncoder.encode(reqUser.getPassword());
         reqUser.setPassword(hashPassword);
         User newUser = this.userService.handleCreateUser(reqUser);

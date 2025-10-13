@@ -1,5 +1,6 @@
 package com.example.demo.controller;
 
+import java.nio.file.AccessDeniedException;
 import java.time.LocalDateTime;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -234,7 +235,7 @@ public class AuthController {
 
     @PostMapping("/auth/verify-otp")
     public ResponseEntity<User> verifyOtp(@RequestBody ReqOtpVerification reqOtpVerification)
-            throws IdInvalidException {
+            throws IdInvalidException, AccessDeniedException {
         PendingUser pendingUser = this.pendingUserService.fetchByEmail(reqOtpVerification.getEmail());
         if (pendingUser == null) {
             throw new IdInvalidException("Email không tồn tại");
