@@ -1,5 +1,6 @@
 package com.example.demo.service;
 
+import java.nio.file.AccessDeniedException;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -52,9 +53,10 @@ public class CleanerProfileService {
         this.cleanerProfileRepository.deleteById(id);
     }
 
-    public CleanerProfile update(CleanerProfile updatedCleanerProfile) {
+    public CleanerProfile update(CleanerProfile updatedCleanerProfile) throws AccessDeniedException {
         if (updatedCleanerProfile.getUser().getId() != null) {
-            updatedCleanerProfile.setUser(this.userService.fetchUserById(updatedCleanerProfile.getUser().getId()));
+            updatedCleanerProfile
+                    .setUser(this.userService.fetchUserByIdWithoutAuth(updatedCleanerProfile.getUser().getId()));
         }
         return this.cleanerProfileRepository.save(updatedCleanerProfile);
     }

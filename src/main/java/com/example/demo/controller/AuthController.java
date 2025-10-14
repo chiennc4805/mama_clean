@@ -313,7 +313,7 @@ public class AuthController {
 
     @PutMapping("/auth/change-password")
     public ResponseEntity<String> changePassword(@RequestBody ReqChangePassword reqChangePassword)
-            throws IdInvalidException {
+            throws IdInvalidException, AccessDeniedException {
         User userDB = this.userService.fetchUserById(reqChangePassword.getUserId());
         if (userDB == null) {
             throw new IdInvalidException("Người dùng với id = " + reqChangePassword.getUserId() + " không tồn tại");

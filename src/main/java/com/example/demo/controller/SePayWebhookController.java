@@ -8,6 +8,8 @@ import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -33,17 +35,17 @@ public class SePayWebhookController {
         this.userService = userService;
     }
 
-    // @Value("${sepay.apiKey}")
-    // private String sepayApiKey;
+    @Value("${sm.sepay.access-token}")
+    private String sepayAccessToken;
 
     @PostMapping("/webhook/sepay")
-    public ResponseEntity<?> handle(@RequestHeader(value = "Authorization", required = false) String authorization,
+    public ResponseEntity<?> handle(@RequestHeader(value = "Authorization") String authorization,
             @RequestBody SePayPayLoad payload) {
         // Xác thực nếu bạn dùng API Key
-        // if (authorization == null || !authorization.equals("Apikey " + sepayApiKey))
-        // {
-        // return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Invalid signature");
-        // }
+        if (authorization == null || !authorization.equals("Apikey " +
+                sepayAccessToken)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Invalid signature");
+        }
 
         // Lấy thông tin từ payload
         String transferType = payload.getTransferType(); // "in" là tiền vào
@@ -61,11 +63,10 @@ public class SePayWebhookController {
         if ("SUCCESS".equals(payment.getStatus())) {
             return ResponseEntity.ok(Map.of("success", true));
         }
-        User user = this.userService.fetchUserById(payment.getUser().getId());
+        User user = this.userService.fetchUserByIdWithoutAuth(payment.getUser().getId());
 
         BigDecimal amount = BigDecimal.valueOf(payload.getTransferAmount());
-        user.setBalance(user.getBalance().add(amount));
-        this.userService.handleUpdateUser(user);
+        this.userService.handleUpdateBalance(user, user.getBalance().add(amount));
 
         payment.setStatus("SUCCESS");
         payment.setAmount(amount);

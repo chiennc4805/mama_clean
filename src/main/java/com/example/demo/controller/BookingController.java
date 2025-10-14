@@ -1,6 +1,7 @@
 package com.example.demo.controller;
 
 import java.math.BigDecimal;
+import java.nio.file.AccessDeniedException;
 import java.util.List;
 
 import org.springframework.data.domain.PageRequest;
@@ -28,6 +29,7 @@ import com.example.demo.service.BookingService;
 import com.example.demo.service.CleanerProfileService;
 import com.example.demo.service.UserService;
 import com.example.demo.service.WalletTransactionService;
+import com.example.demo.util.SecurityUtil;
 import com.example.demo.util.error.IdInvalidException;
 import com.turkraft.springfilter.boot.Filter;
 
@@ -51,30 +53,31 @@ public class BookingController {
 
     @PostMapping("/bookings")
     public ResponseEntity<Booking> createBooking(@Valid @RequestBody Booking reqBooking)
-            throws Exception {
+            throws AccessDeniedException, IdInvalidException {
         if (reqBooking.getCustomer() == null) {
             throw new IdInvalidException("Lịch đặt bị thiếu thông tin khách hàng");
         }
-        User user = this.userService.fetchUserById(reqBooking.getCustomer().getId());
-        if (user != null) {
-            if (user.getBalance().compareTo(BigDecimal.valueOf(reqBooking.getTotalPrice())) >= 0) {
-                user.setBalance(user.getBalance().subtract(BigDecimal.valueOf(reqBooking.getTotalPrice())));
-                this.userService.handleUpdateUser(user);
-            } else {
-                throw new Exception("Số dư tài khoản không đủ");
-            }
-        } else {
-            throw new Exception("Khách hàng không tồn tại");
+        User customer = this.userService.fetchUserById(reqBooking.getCustomer().getId());
+        if (customer == null) {
+            throw new IdInvalidException("Khách hàng không tồn tại");
         }
 
+        reqBooking.setCustomer(customer);
         Booking newBooking = this.bookingService.create(reqBooking);
+
+        if (customer.getBalance().compareTo(BigDecimal.valueOf(reqBooking.getTotalPrice())) >= 0) {
+            this.userService.handleUpdateBalance(customer,
+                    customer.getBalance().subtract(BigDecimal.valueOf(reqBooking.getTotalPrice())));
+        } else {
+            throw new IdInvalidException("Số dư tài khoản không đủ");
+        }
 
         WalletTransaction transaction = new WalletTransaction();
         transaction.setAmount(BigDecimal.valueOf(reqBooking.getTotalPrice()));
         transaction.setRef_id(newBooking.getId());
         transaction.setType("BOOKING_PAYMENT");
         transaction.setStatus("SUCCESS");
-        transaction.setUser(user);
+        transaction.setUser(customer);
         this.walletTransactionService.create(transaction);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(newBooking);
@@ -102,17 +105,15 @@ public class BookingController {
     }
 
     @GetMapping("/bookings/{id}")
-    public ResponseEntity<Booking> fetchBookingById(@PathVariable("id") String id) throws IdInvalidException {
+    public ResponseEntity<Booking> fetchBookingById(@PathVariable("id") String id)
+            throws IdInvalidException, AccessDeniedException {
         Booking booking = this.bookingService.fetchById(id);
-        if (booking == null) {
-            throw new IdInvalidException("Booking with id = " + id + " không tồn tại");
-        }
         return ResponseEntity.ok(booking);
     }
 
     @PutMapping("/bookings")
     public ResponseEntity<Booking> updateBooking(@Valid @RequestBody Booking reqBooking)
-            throws IdInvalidException {
+            throws IdInvalidException, AccessDeniedException {
         Booking booking = this.bookingService.fetchById(reqBooking.getId());
         if (booking == null) {
             throw new IdInvalidException("Booking with id = " + reqBooking.getId() + " không tồn tại");
@@ -130,6 +131,7 @@ public class BookingController {
             cleaner.setBalance(income);
             cleanerProfile.setTotalIncome(cleanerProfile.getTotalIncome().add(income));
             this.userService.handleUpdateUser(cleaner);
+            this.cleanerProfileService.update(cleanerProfile);
         } else if (reqBooking.getStatus().equals("Đã huỷ") && !booking.getStatus().equals("Đã huỷ")) {
             // refund for customer when cancel booking
             User customer = this.userService.fetchUserById(reqBooking.getCustomer().getId());
@@ -155,7 +157,7 @@ public class BookingController {
     @PutMapping("/manual-assign-job")
     public ResponseEntity<Booking> manualAssignJob(@Valid @RequestBody Booking reqBooking)
             throws Exception {
-        Booking booking = this.bookingService.fetchById(reqBooking.getId());
+        Booking booking = this.bookingService.fetchByIdWithoutAuth(reqBooking.getId());
         if (booking == null) {
             throw new IdInvalidException("Booking with id = " + reqBooking.getId() + " không tồn tại");
         }
@@ -172,7 +174,7 @@ public class BookingController {
     @PutMapping("/get-available-job")
     public ResponseEntity<Booking> getAvailableJob(@Valid @RequestBody Booking reqBooking)
             throws Exception {
-        Booking booking = this.bookingService.fetchById(reqBooking.getId());
+        Booking booking = this.bookingService.fetchByIdWithoutAuth(reqBooking.getId());
         if (booking == null) {
             throw new IdInvalidException("Booking with id = " + reqBooking.getId() + " không tồn tại");
         }
@@ -191,14 +193,15 @@ public class BookingController {
         return ResponseEntity.ok(allBookingIncome);
     }
 
-    @DeleteMapping("/bookings/{id}")
-    public ResponseEntity<Void> deleteBooking(@PathVariable("id") String id) throws IdInvalidException {
-        Booking bookingDB = this.bookingService.fetchById(id);
-        if (bookingDB == null) {
-            throw new IdInvalidException("Booking with id = " + id + " không tồn tại");
-        }
-        this.bookingService.delete(id);
-        return ResponseEntity.ok(null);
-    }
+    // @DeleteMapping("/bookings/{id}")
+    // public ResponseEntity<Void> deleteBooking(@PathVariable("id") String id)
+    // throws IdInvalidException {
+    // Booking bookingDB = this.bookingService.fetchById(id);
+    // if (bookingDB == null) {
+    // throw new IdInvalidException("Booking with id = " + id + " không tồn tại");
+    // }
+    // this.bookingService.delete(id);
+    // return ResponseEntity.ok(null);
+    // }
 
 }

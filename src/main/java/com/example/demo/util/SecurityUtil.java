@@ -79,8 +79,8 @@ public class SecurityUtil {
             // hardcode permission (for testing)
             List<String> listAuthority = new ArrayList<>();
 
-            listAuthority.add("ROLE_USER_CREATE");
-            listAuthority.add("ROLE_USER_UPDATE");
+            // listAuthority.add("ROLE_USER_CREATE");
+            // listAuthority.add("ROLE_USER_UPDATE");
 
             // @formatter:off
             //payload

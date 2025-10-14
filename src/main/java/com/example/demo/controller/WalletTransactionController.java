@@ -1,6 +1,7 @@
 package com.example.demo.controller;
 
 import java.math.BigDecimal;
+import java.nio.file.AccessDeniedException;
 
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -43,23 +44,27 @@ public class WalletTransactionController {
             @Valid @RequestBody WalletTransaction reqWalletTransaction)
             throws Exception {
         // cleaner rút tiền
-        if (reqWalletTransaction.getType().equals("WITHDRAW")) {
+        if (reqWalletTransaction.getType().equals("WITHDRAW") && reqWalletTransaction.getStatus().equals("PENDING")) {
             if (reqWalletTransaction.getUser() == null) {
                 throw new Exception("Giao dịch không có người tạo");
             }
             User user = this.userService.fetchUserById(reqWalletTransaction.getUser().getId());
             if (user == null) {
-                throw new Exception("Người dùng không tồn tại");
+                throw new IdInvalidException("Người dùng không tồn tại");
+            }
+            if (!user.getRole().getName().equals("CLEANER")) {
+                throw new AccessDeniedException("Bạn không có quyền truy cập tài nguyên này");
             }
             if (user.getBalance().compareTo(reqWalletTransaction.getAmount()) == -1) {
                 throw new Exception("Số dư không đủ");
             }
             // user.setBalance(user.getBalance().subtract(reqWalletTransaction.getAmount()));
             // this.userService.handleUpdateUser(user);
+            WalletTransaction newWalletTransaction = this.walletTransactionService.create(reqWalletTransaction);
+            return ResponseEntity.status(HttpStatus.CREATED).body(newWalletTransaction);
         }
+        throw new Exception("Giá trị không hợp lệ");
 
-        WalletTransaction newWalletTransaction = this.walletTransactionService.create(reqWalletTransaction);
-        return ResponseEntity.status(HttpStatus.CREATED).body(newWalletTransaction);
     }
 
     @GetMapping("/transactions")
@@ -113,8 +118,8 @@ public class WalletTransactionController {
                 if (user.getBalance().compareTo(reqWalletTransaction.getAmount()) == -1) {
                     throw new Exception("Số dư không đủ");
                 }
-                user.setBalance(user.getBalance().subtract(reqWalletTransaction.getAmount()));
-                this.userService.handleUpdateUser(user);
+                this.userService.handleUpdateBalance(user,
+                        user.getBalance().subtract(reqWalletTransaction.getAmount()));
             }
         }
         WalletTransaction updatedWalletTransaction = this.walletTransactionService.update(reqWalletTransaction);

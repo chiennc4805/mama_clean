@@ -1,5 +1,7 @@
 package com.example.demo.controller;
 
+import java.nio.file.AccessDeniedException;
+
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -33,7 +35,7 @@ public class FeedbackController {
 
     @PostMapping("/feedbacks")
     public ResponseEntity<Feedback> createFeedback(@Valid @RequestBody Feedback reqFeedback)
-            throws IdInvalidException {
+            throws IdInvalidException, AccessDeniedException {
         Feedback newFeedback = this.feedbackService.create(reqFeedback);
         return ResponseEntity.status(HttpStatus.CREATED).body(newFeedback);
     }
@@ -59,7 +61,8 @@ public class FeedbackController {
     }
 
     @GetMapping("/feedbacks/{id}")
-    public ResponseEntity<Feedback> fetchFeedbackById(@PathVariable("id") String id) throws IdInvalidException {
+    public ResponseEntity<Feedback> fetchFeedbackById(@PathVariable("id") String id)
+            throws IdInvalidException, AccessDeniedException {
         Feedback feedback = this.feedbackService.fetchById(id);
         if (feedback == null) {
             throw new IdInvalidException("Feedback with id = " + id + " không tồn tại");
@@ -69,7 +72,7 @@ public class FeedbackController {
 
     @PutMapping("/feedbacks")
     public ResponseEntity<Feedback> updateFeedback(@Valid @RequestBody Feedback reqFeedback)
-            throws IdInvalidException {
+            throws IdInvalidException, AccessDeniedException {
         Feedback feedback = this.feedbackService.fetchById(reqFeedback.getId());
         if (feedback == null) {
             throw new IdInvalidException("Feedback with id = " + reqFeedback.getId() + " không tồn tại");
@@ -79,7 +82,8 @@ public class FeedbackController {
     }
 
     @DeleteMapping("/feedbacks/{id}")
-    public ResponseEntity<Void> deleteFeedback(@PathVariable("id") String id) throws IdInvalidException {
+    public ResponseEntity<Void> deleteFeedback(@PathVariable("id") String id)
+            throws IdInvalidException, AccessDeniedException {
         Feedback feedbackDB = this.feedbackService.fetchById(id);
         if (feedbackDB == null) {
             throw new IdInvalidException("Feedback with id = " + id + " không tồn tại");

@@ -82,7 +82,7 @@ public class CleanerProfileController {
 
     @PutMapping("/cleaner-profiles")
     public ResponseEntity<CleanerProfile> updateCleanerProfile(@Valid @RequestBody CleanerProfile reqCleanerProfile)
-            throws IdInvalidException {
+            throws IdInvalidException, AccessDeniedException {
         CleanerProfile cleanerProfile = this.cleanerProfileService.fetchById(reqCleanerProfile.getId());
         if (cleanerProfile == null) {
             throw new IdInvalidException("CleanerProfile with id = " + reqCleanerProfile.getId() + " không tồn tại");
@@ -91,19 +91,21 @@ public class CleanerProfileController {
         return ResponseEntity.ok(updatedCleanerProfile);
     }
 
-    @DeleteMapping("/cleaner-profiles/{id}")
-    public ResponseEntity<Void> deleteCleanerProfile(@PathVariable("id") String id) throws IdInvalidException {
-        CleanerProfile cleanerProfileDB = this.cleanerProfileService.fetchById(id);
-        if (cleanerProfileDB == null) {
-            throw new IdInvalidException("CleanerProfile with id = " + id + " không tồn tại");
-        }
-        this.cleanerProfileService.delete(id);
-        return ResponseEntity.ok(null);
-    }
+    // @DeleteMapping("/cleaner-profiles/{id}")
+    // public ResponseEntity<Void> deleteCleanerProfile(@PathVariable("id") String
+    // id) throws IdInvalidException {
+    // CleanerProfile cleanerProfileDB = this.cleanerProfileService.fetchById(id);
+    // if (cleanerProfileDB == null) {
+    // throw new IdInvalidException("CleanerProfile with id = " + id + " không tồn
+    // tại");
+    // }
+    // this.cleanerProfileService.delete(id);
+    // return ResponseEntity.ok(null);
+    // }
 
     @PutMapping("/cleaner-profiles/{id}")
     public ResponseEntity<CleanerProfile> calculateAndUpdateRating(@PathVariable("id") String userId,
-            @RequestParam("rating") double rating) throws IdInvalidException {
+            @RequestParam("rating") double rating) throws IdInvalidException, AccessDeniedException {
         CleanerProfile cleanerProfileDB = this.cleanerProfileService.fetchByUserId(userId);
         if (cleanerProfileDB != null) {
             BigDecimal totalOld = BigDecimal.valueOf(

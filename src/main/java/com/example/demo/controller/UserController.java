@@ -42,6 +42,9 @@ public class UserController {
         if (this.userService.isExistByUsername(reqUser.getUsername())) {
             throw new IdInvalidException("Tài khoản " + reqUser.getUsername() + " đã tồn tại");
         }
+        if (reqUser.getUsername().equals("anonymousUser")) {
+            throw new IdInvalidException("Tài khoản " + reqUser.getUsername() + " đã tồn tại");
+        }
         String hashPassword = this.passwordEncoder.encode(reqUser.getPassword());
         reqUser.setPassword(hashPassword);
         User newUser = this.userService.handleCreateUser(reqUser);
@@ -49,7 +52,8 @@ public class UserController {
     }
 
     @PutMapping("/users")
-    public ResponseEntity<User> updateUser(@Valid @RequestBody User reqUser) throws IdInvalidException {
+    public ResponseEntity<User> updateUser(@Valid @RequestBody User reqUser)
+            throws IdInvalidException, AccessDeniedException {
         User userDB = this.userService.fetchUserById(reqUser.getId());
         if (userDB == null) {
             throw new IdInvalidException("User with id = " + reqUser.getId() + " không tồn tại");
@@ -63,7 +67,8 @@ public class UserController {
     }
 
     @DeleteMapping("/users/{id}")
-    public ResponseEntity<Void> deleteUser(@PathVariable("id") String id) throws IdInvalidException {
+    public ResponseEntity<Void> deleteUser(@PathVariable("id") String id)
+            throws IdInvalidException, AccessDeniedException {
         User userDB = this.userService.fetchUserById(id);
         if (userDB == null) {
             throw new IdInvalidException("User with id = " + id + " không tồn tại");
@@ -76,7 +81,7 @@ public class UserController {
     public ResponseEntity<ResultPaginationDTO> fetchAllUsers(
             @Filter Specification<User> spec,
             @RequestParam(required = false) Integer page,
-            @RequestParam(required = false) Integer size) {
+            @RequestParam(required = false) Integer size) throws AccessDeniedException {
         if (page == null && size == null) {
             return ResponseEntity.ok(this.userService.fetchAll(spec));
         } else {
@@ -92,7 +97,8 @@ public class UserController {
     }
 
     @GetMapping("/users/{id}")
-    public ResponseEntity<User> fetchUserById(@PathVariable("id") String id) throws IdInvalidException {
+    public ResponseEntity<User> fetchUserById(@PathVariable("id") String id)
+            throws IdInvalidException, AccessDeniedException {
         User user = this.userService.fetchUserById(id);
         if (user == null) {
             throw new IdInvalidException("User with id = " + id + " không tồn tại");

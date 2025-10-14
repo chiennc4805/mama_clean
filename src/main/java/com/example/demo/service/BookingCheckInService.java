@@ -1,5 +1,6 @@
 package com.example.demo.service;
 
+import java.nio.file.AccessDeniedException;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
@@ -7,6 +8,7 @@ import org.springframework.stereotype.Service;
 import com.example.demo.domain.BookingCheckIn;
 import com.example.demo.domain.BookingCheckOut;
 import com.example.demo.repository.BookingCheckInRepository;
+import com.example.demo.util.error.IdInvalidException;
 
 @Service
 public class BookingCheckInService {
@@ -19,7 +21,7 @@ public class BookingCheckInService {
         this.bookingService = bookingService;
     }
 
-    public BookingCheckIn create(BookingCheckIn bookingCheckIn) {
+    public BookingCheckIn create(BookingCheckIn bookingCheckIn) throws AccessDeniedException, IdInvalidException {
         if (bookingCheckIn.getBooking().getId() != null) {
             bookingCheckIn.setBooking(this.bookingService.fetchById(bookingCheckIn.getBooking().getId()));
         }

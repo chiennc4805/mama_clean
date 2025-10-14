@@ -1,5 +1,7 @@
 package com.example.demo.controller;
 
+import java.nio.file.AccessDeniedException;
+
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -34,7 +36,7 @@ public class PaymentController {
 
     @PostMapping("/payments")
     public ResponseEntity<Payment> createPayment(@Valid @RequestBody Payment reqPayment)
-            throws IdInvalidException {
+            throws IdInvalidException, AccessDeniedException {
         Payment newPayment = this.paymentService.create(reqPayment);
         return ResponseEntity.status(HttpStatus.CREATED).body(newPayment);
     }
@@ -60,33 +62,34 @@ public class PaymentController {
     }
 
     @GetMapping("/payments/{id}")
-    public ResponseEntity<Payment> fetchPaymentById(@PathVariable("id") String id) throws IdInvalidException {
+    public ResponseEntity<Payment> fetchPaymentById(@PathVariable("id") String id)
+            throws IdInvalidException, AccessDeniedException {
         Payment payment = this.paymentService.fetchById(id);
-        if (payment == null) {
-            throw new IdInvalidException("Payment with id = " + id + " không tồn tại");
-        }
         return ResponseEntity.ok(payment);
     }
 
-    @PutMapping("/payments")
-    public ResponseEntity<Payment> updatePayment(@Valid @RequestBody Payment reqPayment)
-            throws IdInvalidException {
-        Payment payment = this.paymentService.fetchById(reqPayment.getId());
-        if (payment == null) {
-            throw new IdInvalidException("Payment with id = " + reqPayment.getId() + " không tồn tại");
-        }
-        Payment updatedPayment = this.paymentService.update(reqPayment);
-        return ResponseEntity.ok(updatedPayment);
-    }
+    // @PutMapping("/payments")
+    // public ResponseEntity<Payment> updatePayment(@Valid @RequestBody Payment
+    // reqPayment)
+    // throws IdInvalidException {
+    // Payment payment = this.paymentService.fetchById(reqPayment.getId());
+    // if (payment == null) {
+    // throw new IdInvalidException("Payment with id = " + reqPayment.getId() + "
+    // không tồn tại");
+    // }
+    // Payment updatedPayment = this.paymentService.update(reqPayment);
+    // return ResponseEntity.ok(updatedPayment);
+    // }
 
-    @DeleteMapping("/payments/{id}")
-    public ResponseEntity<Void> deletePayment(@PathVariable("id") String id) throws IdInvalidException {
-        Payment paymentDB = this.paymentService.fetchById(id);
-        if (paymentDB == null) {
-            throw new IdInvalidException("Payment with id = " + id + " không tồn tại");
-        }
-        this.paymentService.delete(id);
-        return ResponseEntity.ok(null);
-    }
+    // @DeleteMapping("/payments/{id}")
+    // public ResponseEntity<Void> deletePayment(@PathVariable("id") String id)
+    // throws IdInvalidException {
+    // Payment paymentDB = this.paymentService.fetchById(id);
+    // if (paymentDB == null) {
+    // throw new IdInvalidException("Payment with id = " + id + " không tồn tại");
+    // }
+    // this.paymentService.delete(id);
+    // return ResponseEntity.ok(null);
+    // }
 
 }
