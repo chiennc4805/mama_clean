@@ -15,7 +15,7 @@ public class CorsConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(Arrays.asList("http://localhost:4173", "http://localhost:5173",
-                "http://localhost:3000", "https://ethnographic-designingly-earnest.ngrok-free.dev")); // cổng frontend
+                "http://localhost:3000", "https://ethnographic-designingly-earnest.ngrok-free.dev", "http://localhost", "https://mamasclean.com", "https://www.mamasclean.com")); // cổng frontend
         // origin ở đây là domain, port
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS")); // Allowed methods
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept", "x-no-retry"));

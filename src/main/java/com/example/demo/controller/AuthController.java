@@ -8,6 +8,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.core.Authentication;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -37,6 +39,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
 @RestController
+@RequestMapping("/api")
 public class AuthController {
 
     @Value("${sm.jwt.refresh-token-validity-in-seconds}")
@@ -58,51 +61,56 @@ public class AuthController {
     }
 
     @PostMapping("/auth/login")
-    public ResponseEntity<ResLoginDTO> login(@Valid @RequestBody ReqLoginDTO loginDto) {
-        // Nạp input gồm username/password vào Security
-        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
-                loginDto.getUsername(), loginDto.getPassword());
+    public ResponseEntity<?> login(@Valid @RequestBody ReqLoginDTO loginDto) {
+        try {
+            // Nạp input gồm username/password vào Security
+            UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
+                    loginDto.getUsername(), loginDto.getPassword());
 
-        // xác thực người dùng => cần viết hàm loadUserByUsername
-        Authentication authentication = this.authenticationManagerBuilder.getObject().authenticate(authenticationToken);
+            // xác thực người dùng => cần viết hàm loadUserByUsername
+            Authentication authentication = this.authenticationManagerBuilder.getObject()
+                    .authenticate(authenticationToken);
 
-        // set thông tin người dùng đăng nhập vào context (có thể sử dụng sau này)
-        SecurityContextHolder.getContext().setAuthentication(authentication);
+            // set thông tin người dùng đăng nhập vào context (có thể sử dụng sau này)
+            SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        ResLoginDTO res = new ResLoginDTO();
-        User currentUserDB = this.userService.handleGetUserByUsername(loginDto.getUsername());
-        if (currentUserDB != null) {
-            ResLoginDTO.UserLogin userLogin = new ResLoginDTO.UserLogin(
-                    currentUserDB.getId(),
-                    currentUserDB.getName(),
-                    currentUserDB.getEmail(),
-                    currentUserDB.getBalance(),
-                    currentUserDB.getRole(),
-                    currentUserDB.getAvatar());
-            res.setUser(userLogin);
+            ResLoginDTO res = new ResLoginDTO();
+            User currentUserDB = this.userService.handleGetUserByUsername(loginDto.getUsername());
+            if (currentUserDB != null) {
+                ResLoginDTO.UserLogin userLogin = new ResLoginDTO.UserLogin(
+                        currentUserDB.getId(),
+                        currentUserDB.getName(),
+                        currentUserDB.getEmail(),
+                        currentUserDB.getBalance(),
+                        currentUserDB.getRole(),
+                        currentUserDB.getAvatar());
+                res.setUser(userLogin);
+            }
+            // create access token
+            String access_token = this.securityUtil.createAccessToken(authentication.getName(), res);
+            res.setAccessToken(access_token);
+
+            // create refresh token
+            String refresh_token = this.securityUtil.createRefreshToken(loginDto.getUsername(), res);
+
+            // update user
+            this.userService.updateUserToken(refresh_token, loginDto.getUsername());
+
+            // set cookies
+            ResponseCookie resCookie = ResponseCookie
+                    .from("refresh_token", refresh_token)
+                    .httpOnly(true)
+                    .secure(true)
+                    .path("/")
+                    .maxAge(refreshTokenExpiration)
+                    .build();
+
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.SET_COOKIE, resCookie.toString())
+                    .body(res);
+        } catch (BadCredentialsException ex) {
+            throw new BadCredentialsException("Tài khoản hoặc mật khẩu chưa chính xác");
         }
-        // create access token
-        String access_token = this.securityUtil.createAccessToken(authentication.getName(), res);
-        res.setAccessToken(access_token);
-
-        // create refresh token
-        String refresh_token = this.securityUtil.createRefreshToken(loginDto.getUsername(), res);
-
-        // update user
-        this.userService.updateUserToken(refresh_token, loginDto.getUsername());
-
-        // set cookies
-        ResponseCookie resCookie = ResponseCookie
-                .from("refresh_token", refresh_token)
-                .httpOnly(true)
-                .secure(true)
-                .path("/")
-                .maxAge(refreshTokenExpiration)
-                .build();
-
-        return ResponseEntity.ok()
-                .header(HttpHeaders.SET_COOKIE, resCookie.toString())
-                .body(res);
     }
 
     @GetMapping("/auth/account")

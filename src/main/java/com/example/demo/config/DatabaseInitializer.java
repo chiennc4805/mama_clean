@@ -1,5 +1,6 @@
 package com.example.demo.config;
 
+import java.time.LocalDate;
 import java.util.Optional;
 
 import org.springframework.boot.CommandLineRunner;
@@ -70,7 +71,9 @@ public class DatabaseInitializer implements CommandLineRunner {
             adminUser.setName("I'm super admin");
             adminUser.setUsername("admin@gmail.com");
             adminUser.setEmail("admin@gmail.com");
-            adminUser.setPassword(this.passwordEncoder.encode("123456"));
+            adminUser.setPhone("0868686868");
+            adminUser.setGender(true);
+            adminUser.setPassword(this.passwordEncoder.encode("mamascleanfa25"));
 
             Optional<Role> roleOptional = this.roleRepository.findByName("SUPER_ADMIN");
             Role adminRole = roleOptional.isPresent() ? roleOptional.get() : null;
@@ -82,7 +85,9 @@ public class DatabaseInitializer implements CommandLineRunner {
             customer.setName("Nguyễn Lương Gia Phát");
             customer.setUsername("customer@gmail.com");
             customer.setEmail("customer@gmail.com");
-            customer.setPassword(this.passwordEncoder.encode("123456"));
+            customer.setPhone("0888866666");
+            customer.setGender(true);
+            customer.setPassword(this.passwordEncoder.encode("mamascleanfa25"));
             roleOptional = this.roleRepository.findByName("CUSTOMER");
             Role customerRole = roleOptional.isPresent() ? roleOptional.get() : null;
             if (customerRole != null) {
@@ -93,7 +98,9 @@ public class DatabaseInitializer implements CommandLineRunner {
             cleaner.setName("Nguyễn Công Chiến");
             cleaner.setUsername("cleaner@gmail.com");
             cleaner.setEmail("cleaner@gmail.com");
-            cleaner.setPassword(this.passwordEncoder.encode("123456"));
+            cleaner.setPhone("0666688888");
+            cleaner.setGender(true);
+            cleaner.setPassword(this.passwordEncoder.encode("mamascleanfa25"));
             roleOptional = this.roleRepository.findByName("CLEANER");
             Role cleanerRole = roleOptional.isPresent() ? roleOptional.get() : null;
             if (cleanerRole != null) {
@@ -101,6 +108,12 @@ public class DatabaseInitializer implements CommandLineRunner {
             }
             CleanerProfile cleanerProfile = new CleanerProfile();
             cleanerProfile.setAddress("Đường Ga Đông Anh, Đông Anh, Hà Nội");
+            cleanerProfile.setBank("MB Bank");
+            cleanerProfile.setBankNo("999999999");
+            cleanerProfile.setDob(LocalDate.now());
+            cleanerProfile.setIdDate(LocalDate.now());
+            cleanerProfile.setIdPlace("Đường Ga Đông Anh, Đông Anh, Hà Nội");
+            cleanerProfile.setIdNumber("001205066JQK");
             cleanerProfile.setUser(cleaner);
 
             this.userRepository.save(adminUser);
