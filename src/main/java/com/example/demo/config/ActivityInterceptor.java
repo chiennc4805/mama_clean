@@ -1,6 +1,7 @@
 package com.example.demo.config;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
@@ -28,6 +29,19 @@ public class ActivityInterceptor implements HandlerInterceptor {
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
             throws Exception {
+
+        String path = request.getRequestURI();
+        // Danh sách bỏ qua (giống trong SecurityConfiguration)
+        String[] whiteList = {
+                "/", "/api/auth/login", "/api/auth/refresh", "/api/auth/register",
+                "/api/auth/verify-otp", "/api/auth/resend-otp", "/api/auth/forget-password",
+                "/upload", "/webhook/sepay", "/favico.ico", "/assets", "/index.html"
+        };
+
+        boolean isWhiteListed = Arrays.stream(whiteList).anyMatch(path::startsWith);
+        if (isWhiteListed) {
+            return true; // bỏ qua
+        }
 
         // Lấy JWT từ header
         String authHeader = request.getHeader("Authorization");
