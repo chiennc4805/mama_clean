@@ -26,6 +26,7 @@ import com.example.demo.domain.CleanerProfile;
 import com.example.demo.domain.User;
 import com.example.demo.domain.WalletTransaction;
 import com.example.demo.domain.dto.response.ResultPaginationDTO;
+import com.example.demo.repository.UserRepository;
 import com.example.demo.service.BookingService;
 import com.example.demo.service.CleanerProfileService;
 import com.example.demo.service.UserService;
@@ -44,13 +45,15 @@ public class BookingController {
     private final UserService userService;
     private final WalletTransactionService walletTransactionService;
     private final CleanerProfileService cleanerProfileService;
+    private final UserRepository userRepository;
 
-    public BookingController(BookingService bookingService, UserService userService,
+    public BookingController(BookingService bookingService, UserService userService, UserRepository userRepository,
             WalletTransactionService walletTransactionService, CleanerProfileService cleanerProfileService) {
         this.bookingService = bookingService;
         this.userService = userService;
         this.walletTransactionService = walletTransactionService;
         this.cleanerProfileService = cleanerProfileService;
+        this.userRepository = userRepository;
     }
 
     @PostMapping("/bookings")
@@ -116,11 +119,18 @@ public class BookingController {
     @PutMapping("/bookings")
     public ResponseEntity<Booking> updateBooking(@Valid @RequestBody Booking reqBooking)
             throws IdInvalidException, AccessDeniedException {
+        // authenticate
+        String username = SecurityUtil.getCurrentUserLogin().orElse("");
+        User currentLoginUser = this.userRepository.findByUsername(username).orElse(null);
+
         Booking booking = this.bookingService.fetchById(reqBooking.getId());
         if (booking == null) {
             throw new IdInvalidException("Booking with id = " + reqBooking.getId() + " không tồn tại");
         }
         if (reqBooking.getStatus().equals("Đã hoàn thành") && booking.getStatus().equals("Chờ Check-out")) {
+            if (!currentLoginUser.getRole().getName().equals("CLEANER")) {
+                throw new AccessDeniedException("Bạn không có quyền truy cập tài nguyên này");
+            }
             if (reqBooking.getCleaner() == null) {
                 throw new IdInvalidException("Lịch đặt không có người dọn dẹp");
             }
@@ -135,6 +145,9 @@ public class BookingController {
             this.userService.handleUpdateUser(cleaner);
             this.cleanerProfileService.update(cleanerProfile);
         } else if (reqBooking.getStatus().equals("Đã huỷ") && !booking.getStatus().equals("Đã huỷ")) {
+            if (!currentLoginUser.getRole().getName().equals("CUSTOMER")) {
+                throw new AccessDeniedException("Bạn không có quyền truy cập tài nguyên này");
+            }
             // refund for customer when cancel booking
             User customer = this.userService.fetchUserById(reqBooking.getCustomer().getId());
             if (customer == null) {

@@ -73,4 +73,9 @@ public class Booking {
     @ManyToOne
     @JoinColumn(name = "service_id")
     private Service service;
+
+    @OneToMany(mappedBy = "booking")
+    @JsonIgnore
+    private List<BookingAction> bookingActions;
+
 }

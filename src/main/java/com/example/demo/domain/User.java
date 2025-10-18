@@ -97,6 +97,10 @@ public class User {
     @JsonIgnore
     private List<WalletTransaction> walletTransactions;
 
+    @OneToMany(mappedBy = "user")
+    @JsonIgnore
+    private List<BookingAction> bookingActions;
+
 }
 
 // @OneToOne(mappedBy = "user", orphanRemoval = true, cascade =

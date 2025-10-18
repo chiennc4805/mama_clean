@@ -68,7 +68,7 @@ public class DatabaseInitializer implements CommandLineRunner {
 
         if (countUser == 0) {
             User adminUser = new User();
-            adminUser.setName("I'm super admin");
+            adminUser.setName("Quản trị viên");
             adminUser.setUsername("admin@gmail.com");
             adminUser.setEmail("admin@gmail.com");
             adminUser.setPhone("0868686868");
