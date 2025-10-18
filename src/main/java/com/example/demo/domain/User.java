@@ -43,6 +43,7 @@ public class User {
     private String phone;
     private String email;
     private boolean gender;
+    private String provider = "local"; // google, local
 
     @Column(precision = 18, scale = 2)
     private BigDecimal balance = BigDecimal.valueOf(0);

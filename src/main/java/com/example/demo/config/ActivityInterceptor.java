@@ -33,7 +33,7 @@ public class ActivityInterceptor implements HandlerInterceptor {
         String path = request.getRequestURI();
         // Danh sách bỏ qua (giống trong SecurityConfiguration)
         String[] whiteList = {
-                "/", "/api/auth/login", "/api/auth/refresh", "/api/auth/register",
+                "/", "/api/auth/login", "/api/auth/google", "/api/auth/refresh", "/api/auth/register",
                 "/api/auth/verify-otp", "/api/auth/resend-otp", "/api/auth/forget-password",
                 "/upload", "/webhook/sepay", "/favico.ico", "/assets", "/index.html"
         };

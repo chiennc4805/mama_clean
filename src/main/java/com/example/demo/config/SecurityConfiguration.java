@@ -65,7 +65,8 @@ public class SecurityConfiguration {
     public SecurityFilterChain filterChain(HttpSecurity http,
             CustomAuthenticationEntryPoint customAuthenticationEntryPoint) throws Exception {
         String[] whiteList = {
-                "/", "/api/auth/login", "/api/auth/refresh", "/api/auth/register", "/api/auth/verify-otp", "/api/auth/resend-otp",
+                "/", "/api/auth/login", "/api/auth/google", "/api/auth/refresh", "/api/auth/register",
+                "/api/auth/verify-otp", "/api/auth/resend-otp",
                 "/api/auth/forget-password", "/upload/**", "/webhook/sepay", "/favico.ico", "/assets/**", "/index.html"
         };
         http

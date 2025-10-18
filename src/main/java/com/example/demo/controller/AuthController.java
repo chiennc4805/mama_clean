@@ -1,7 +1,11 @@
 package com.example.demo.controller;
 
+import java.io.IOException;
 import java.nio.file.AccessDeniedException;
+import java.security.GeneralSecurityException;
 import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
@@ -13,6 +17,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.CookieValue;
@@ -33,6 +39,10 @@ import com.example.demo.service.PendingUserService;
 import com.example.demo.service.UserService;
 import com.example.demo.util.SecurityUtil;
 import com.example.demo.util.error.IdInvalidException;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.gson.GsonFactory;
 
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -45,23 +55,29 @@ public class AuthController {
     @Value("${sm.jwt.refresh-token-validity-in-seconds}")
     private long refreshTokenExpiration;
 
+    @Value("${sm.google.client.id}")
+    private String googleClientId;
+
     private final AuthenticationManagerBuilder authenticationManagerBuilder;
     private final SecurityUtil securityUtil;
     private final UserService userService;
     private final PasswordEncoder passwordEncoder;
     private final PendingUserService pendingUserService;
+    private final UserDetailsService userDetailsService;
 
     public AuthController(AuthenticationManagerBuilder authenticationManagerBuilder, SecurityUtil securityUtil,
-            UserService userService, PasswordEncoder passwordEncoder, PendingUserService pendingUserService) {
+            UserService userService, PasswordEncoder passwordEncoder, PendingUserService pendingUserService,
+            UserDetailsService userDetailsService) {
         this.authenticationManagerBuilder = authenticationManagerBuilder;
         this.securityUtil = securityUtil;
         this.userService = userService;
         this.passwordEncoder = passwordEncoder;
         this.pendingUserService = pendingUserService;
+        this.userDetailsService = userDetailsService;
     }
 
     @PostMapping("/auth/login")
-    public ResponseEntity<?> login(@Valid @RequestBody ReqLoginDTO loginDto) {
+    public ResponseEntity<ResLoginDTO> login(@Valid @RequestBody ReqLoginDTO loginDto) {
         try {
             // Nạp input gồm username/password vào Security
             UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
@@ -110,6 +126,89 @@ public class AuthController {
                     .body(res);
         } catch (BadCredentialsException ex) {
             throw new BadCredentialsException("Tài khoản hoặc mật khẩu chưa chính xác");
+        }
+    }
+
+    @PostMapping("/auth/google")
+    public ResponseEntity<ResLoginDTO> loginWithGoogle(@RequestBody Map<String, String> body) {
+        String token = body.get("token");
+        try {
+            GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(
+                    new NetHttpTransport(),
+                    GsonFactory.getDefaultInstance())
+                    .setAudience(Collections.singletonList(googleClientId))
+                    .build();
+
+            GoogleIdToken idToken = verifier.verify(token);
+            if (idToken != null) {
+                GoogleIdToken.Payload payload = idToken.getPayload();
+                String email = payload.getEmail();
+
+                User user = userService.handleGetUserByUsername(email);
+                if (user == null) {
+                    User newUser = new User();
+
+                    String username = email;
+                    String name = (String) payload.get("name");
+                    String pictureUrl = (String) payload.get("picture");
+
+                    newUser.setUsername(username);
+                    newUser.setName(name);
+                    newUser.setEmail(email);
+                    newUser.setProvider("google");
+
+                    user = this.userService.handleCreateUser(newUser);
+                }
+
+                if (user.getProvider().equalsIgnoreCase("local")) {
+                    throw new AccessDeniedException("Tài khoản này đã được tạo bằng username-password");
+                }
+
+                UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+                UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
+                        userDetails, null, userDetails.getAuthorities());
+                SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+
+                // set thông tin người dùng đăng nhập vào context (có thể sử dụng sau này)
+                SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+
+                ResLoginDTO res = new ResLoginDTO();
+                ResLoginDTO.UserLogin userLogin = new ResLoginDTO.UserLogin(
+                        user.getId(),
+                        user.getName(),
+                        user.getEmail(),
+                        user.getBalance(),
+                        user.getRole(),
+                        user.getAvatar());
+                res.setUser(userLogin);
+
+                // create access token
+                String access_token = this.securityUtil.createAccessToken(user.getUsername(), res);
+                res.setAccessToken(access_token);
+
+                // create refresh token
+                String refresh_token = this.securityUtil.createRefreshToken(user.getUsername(), res);
+
+                // update user
+                this.userService.updateUserToken(refresh_token, user.getUsername());
+
+                // set cookies
+                ResponseCookie resCookie = ResponseCookie
+                        .from("refresh_token", refresh_token)
+                        .httpOnly(true)
+                        .secure(true)
+                        .path("/")
+                        .maxAge(refreshTokenExpiration)
+                        .build();
+
+                return ResponseEntity.ok()
+                        .header(HttpHeaders.SET_COOKIE, resCookie.toString())
+                        .body(res);
+            } else {
+                throw new BadCredentialsException("Token không hợp lệ");
+            }
+        } catch (GeneralSecurityException | IOException e) {
+            throw new BadCredentialsException("Lỗi xác thực Google: " + e.getMessage());
         }
     }
 
