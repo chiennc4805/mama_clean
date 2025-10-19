@@ -140,7 +140,7 @@ public class BookingController {
             }
             CleanerProfile cleanerProfile = this.cleanerProfileService.fetchByUserId(cleaner.getId());
             BigDecimal income = BigDecimal.valueOf(Math.round(reqBooking.getTotalPrice() * 0.8));
-            cleaner.setBalance(income);
+            cleaner.setBalance(cleaner.getBalance().add(income));
             cleanerProfile.setTotalIncome(cleanerProfile.getTotalIncome().add(income));
             this.userService.handleUpdateUser(cleaner);
             this.cleanerProfileService.update(cleanerProfile);

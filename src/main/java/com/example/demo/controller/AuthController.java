@@ -77,7 +77,7 @@ public class AuthController {
     }
 
     @PostMapping("/auth/login")
-    public ResponseEntity<ResLoginDTO> login(@Valid @RequestBody ReqLoginDTO loginDto) {
+    public ResponseEntity<ResLoginDTO> login(@Valid @RequestBody ReqLoginDTO loginDto) throws AccessDeniedException {
         try {
             // Nạp input gồm username/password vào Security
             UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
@@ -93,6 +93,10 @@ public class AuthController {
             ResLoginDTO res = new ResLoginDTO();
             User currentUserDB = this.userService.handleGetUserByUsername(loginDto.getUsername());
             if (currentUserDB != null) {
+                if (!currentUserDB.isStatus()) {
+                    throw new AccessDeniedException(
+                            "Tài khoản của bạn đã bị khoá. Vui lòng liên hệ quản trị viên để biết thêm thông tin.");
+                }
                 ResLoginDTO.UserLogin userLogin = new ResLoginDTO.UserLogin(
                         currentUserDB.getId(),
                         currentUserDB.getName(),

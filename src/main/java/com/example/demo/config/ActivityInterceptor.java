@@ -3,6 +3,7 @@ package com.example.demo.config;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
@@ -38,7 +39,9 @@ public class ActivityInterceptor implements HandlerInterceptor {
                 "/upload", "/webhook/sepay", "/favico.ico", "/assets", "/index.html"
         };
 
-        boolean isWhiteListed = Arrays.stream(whiteList).anyMatch(path::startsWith);
+        if (path.equals("/"))
+            return true;
+        boolean isWhiteListed = Arrays.stream(whiteList).anyMatch(p -> path.equals(p) || path.startsWith(p + "/"));
         if (isWhiteListed) {
             return true; // bỏ qua
         }
@@ -52,6 +55,11 @@ public class ActivityInterceptor implements HandlerInterceptor {
                     : null;
             if (username != null) {
                 User user = this.userService.fetchUserByEmail(username);
+
+                if (!user.isStatus()) {
+                    throw new AccessDeniedException(
+                            "Tài khoản của bạn đã bị khoá. Vui lòng liên hệ quản trị viên để biết thêm thông tin.");
+                }
 
                 UserActivity userActivity = new UserActivity();
                 userActivity.setUser(user);

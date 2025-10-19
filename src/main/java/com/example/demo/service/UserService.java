@@ -1,7 +1,10 @@
 package com.example.demo.service;
 
+import static org.mockito.ArgumentMatchers.contains;
+
 import java.math.BigDecimal;
 import java.nio.file.AccessDeniedException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -10,23 +13,29 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
+import com.example.demo.domain.Booking;
 import com.example.demo.domain.Role;
 import com.example.demo.domain.User;
 import com.example.demo.domain.dto.response.ResultPaginationDTO;
 import com.example.demo.domain.dto.response.ResultPaginationDTO.Meta;
+import com.example.demo.repository.BookingRepository;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.util.SecurityUtil;
+
+import jakarta.transaction.Transactional;
 
 @Service
 public class UserService {
 
     private final UserRepository userRepository;
     private final RoleService roleService;
+    private final BookingRepository bookingRepository;
 
     public UserService(UserRepository userRepository, RoleService roleService,
-            UserActivityService userActivityService) {
+            UserActivityService userActivityService, BookingRepository bookingRepository) {
         this.userRepository = userRepository;
         this.roleService = roleService;
+        this.bookingRepository = bookingRepository;
     }
 
     public User handleCreateUser(User user) throws AccessDeniedException {
@@ -92,6 +101,7 @@ public class UserService {
             }
         }
         User userDB = this.fetchUserById(reqUser.getId());
+        reqUser.setProvider(userDB.getProvider());
         reqUser.setBalance(userDB.getBalance());
         reqUser.setRole(userDB.getRole());
         reqUser.setEmail(userDB.getEmail());
@@ -110,13 +120,32 @@ public class UserService {
         return this.userRepository.save(user);
     }
 
-    public void handleDeleteUser(String id) throws AccessDeniedException {
+    @Transactional
+    public void handleDeleteUser(String id) throws AccessDeniedException, IllegalStateException {
         String username = SecurityUtil.getCurrentUserLogin().orElse("");
         User currentLoginUser = this.userRepository.findByUsername(username).orElse(null);
         if (!currentLoginUser.getRole().getName().equals("SUPER_ADMIN")) {
             throw new AccessDeniedException("Bạn không có quyền truy cập tài nguyên này");
         }
-        this.userRepository.deleteById(id);
+        // soft delete
+        User deleteUser = fetchUserById(id);
+        deleteUser.setStatus(false);
+        handleUpdateUser(deleteUser);
+
+        List<Booking> bookings = this.bookingRepository.findByCleanerId(id);
+        bookings.forEach(b -> {
+            if (List.of("Chờ xác nhận", "Chờ Check-in").contains(b.getStatus())) {
+                b.setStatus("Mới");
+            } else if (b.getStatus().equals("Chờ Check-out")) {
+                throw new IllegalStateException("Nhân viên đang có đặt lịch cần thực hiện. Vui lòng thử lại sau");
+            } else if (b.getStatus().equals("Đã hoàn thành")) {
+                return;
+            }
+            b.setCleaner(null);
+        });
+        this.bookingRepository.saveAll(bookings);
+
+        // this.userRepository.deleteById(id);
     }
 
     public ResultPaginationDTO fetchAll(Specification<User> spec) throws AccessDeniedException {

@@ -70,7 +70,7 @@ public class UserController {
 
     @DeleteMapping("/users/{id}")
     public ResponseEntity<Void> deleteUser(@PathVariable("id") String id)
-            throws IdInvalidException, AccessDeniedException {
+            throws IdInvalidException, AccessDeniedException, IllegalStateException {
         User userDB = this.userService.fetchUserById(id);
         if (userDB == null) {
             throw new IdInvalidException("User with id = " + id + " không tồn tại");
